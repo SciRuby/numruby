@@ -39,7 +39,7 @@ LIB_DIRS = [
 
 dir_config(extension_name, HEADER_DIRS, LIB_DIRS)
 
-# have_library('af')
+have_library('blas')
 
 basenames = %w{ruby_nmatrix}
 $objs = basenames.map { |b| "#{b}.o"   }

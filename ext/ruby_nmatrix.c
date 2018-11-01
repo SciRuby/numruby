@@ -1,5 +1,7 @@
 #include "ruby.h"
 #include "stdio.h"
+#include "cblas.h"
+#include "math.h"
 
 typedef struct NMATRIX_STRUCT
 {
@@ -27,6 +29,35 @@ DECL_ELEMENTWISE_RUBY_ACCESSOR(multiply)
 DECL_ELEMENTWISE_RUBY_ACCESSOR(divide)
 
 
+VALUE nm_sin(VALUE self);
+
+#define DECL_UNARY_RUBY_ACCESSOR(name)          static VALUE nm_##name(VALUE self);
+DECL_UNARY_RUBY_ACCESSOR(cos)
+DECL_UNARY_RUBY_ACCESSOR(tan)
+DECL_UNARY_RUBY_ACCESSOR(asin)
+DECL_UNARY_RUBY_ACCESSOR(acos)
+DECL_UNARY_RUBY_ACCESSOR(atan)
+DECL_UNARY_RUBY_ACCESSOR(sinh)
+DECL_UNARY_RUBY_ACCESSOR(cosh)
+DECL_UNARY_RUBY_ACCESSOR(tanh)
+DECL_UNARY_RUBY_ACCESSOR(asinh)
+DECL_UNARY_RUBY_ACCESSOR(acosh)
+DECL_UNARY_RUBY_ACCESSOR(atanh)
+DECL_UNARY_RUBY_ACCESSOR(exp)
+DECL_UNARY_RUBY_ACCESSOR(log2)
+DECL_UNARY_RUBY_ACCESSOR(log1p)
+DECL_UNARY_RUBY_ACCESSOR(log10)
+DECL_UNARY_RUBY_ACCESSOR(sqrt)
+DECL_UNARY_RUBY_ACCESSOR(erf)
+DECL_UNARY_RUBY_ACCESSOR(erfc)
+DECL_UNARY_RUBY_ACCESSOR(cbrt)
+DECL_UNARY_RUBY_ACCESSOR(lgamma)
+DECL_UNARY_RUBY_ACCESSOR(tgamma)
+DECL_UNARY_RUBY_ACCESSOR(floor)
+DECL_UNARY_RUBY_ACCESSOR(ceil)
+
+VALUE nm_dot(VALUE self, VALUE another);
+
 void Init_nmatrix() {
   NMatrix = rb_define_class("NMatrix", rb_cObject);
 
@@ -37,8 +68,36 @@ void Init_nmatrix() {
 
   rb_define_method(NMatrix, "+", nm_add, 1);
   rb_define_method(NMatrix, "-", nm_subtract, 1);
-  rb_define_method(NMatrix, "*", nm_multiply,1);
-  rb_define_method(NMatrix, "/", nm_divide,1);
+  rb_define_method(NMatrix, "*", nm_multiply, 1);
+  rb_define_method(NMatrix, "/", nm_divide, 1);
+
+  rb_define_method(NMatrix, "sin", nm_sin, 0);
+  rb_define_method(NMatrix, "cos", nm_cos, 0);
+  rb_define_method(NMatrix, "tan", nm_tan, 0);
+  rb_define_method(NMatrix, "asin", nm_asin, 0);
+  rb_define_method(NMatrix, "acos", nm_acos, 0);
+  rb_define_method(NMatrix, "atan", nm_atan, 0);
+  rb_define_method(NMatrix, "sinh", nm_sinh, 0);
+  rb_define_method(NMatrix, "cosh", nm_cosh, 0);
+  rb_define_method(NMatrix, "tanh", nm_tanh, 0);
+  rb_define_method(NMatrix, "asinh", nm_asinh, 0);
+  rb_define_method(NMatrix, "acosh", nm_acosh, 0);
+  rb_define_method(NMatrix, "atanh", nm_atanh, 0);
+  rb_define_method(NMatrix, "exp", nm_exp, 0);
+  rb_define_method(NMatrix, "log2", nm_log2, 0);
+  rb_define_method(NMatrix, "log1p", nm_log1p, 0);
+  rb_define_method(NMatrix, "log10", nm_log10, 0);
+  rb_define_method(NMatrix, "sqrt", nm_sqrt, 0);
+  rb_define_method(NMatrix, "erf", nm_erf, 0);
+  rb_define_method(NMatrix, "erfc", nm_erfc, 0);
+  rb_define_method(NMatrix, "cbrt", nm_cbrt, 0);
+  rb_define_method(NMatrix, "lgamma", nm_lgamma, 0);
+  rb_define_method(NMatrix, "tgamma", nm_tgamma, 0);
+  rb_define_method(NMatrix, "floor", nm_floor, 0);
+  rb_define_method(NMatrix, "ceil", nm_ceil, 0);
+
+  rb_define_method(NMatrix, "dot", nm_dot, 1);
+
 }
 
 
@@ -150,3 +209,72 @@ VALUE nm_##name(VALUE self, VALUE another){        \
 DEF_ELEMENTWISE_RUBY_ACCESSOR(subtract, -)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(multiply, *)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(divide, /)
+
+VALUE nm_sin(VALUE self){
+  nmatrix* input;
+  Data_Get_Struct(self, nmatrix, input);
+
+  nmatrix* result = ALLOC(nmatrix);
+  result->count = input->count;
+  result->ndims = input->ndims;
+  result->shape = ALLOC_N(size_t, result->ndims);
+
+  for(size_t index = 0; index < result->ndims; index++){
+    result->shape[index] = input->shape[index];
+  }
+
+  result->elements = ALLOC_N(double, result->count);
+  for(size_t index = 0; index < input->count; index++){
+    result->elements[index] = sin(input->elements[index]);
+  }
+
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+}
+
+#define DEF_UNARY_RUBY_ACCESSOR(oper, name)                        \
+static VALUE nm_##name(VALUE self) {                               \
+  nmatrix* input;                                                  \
+  Data_Get_Struct(self, nmatrix, input);                           \
+                                                                   \
+  nmatrix* result = ALLOC(nmatrix);                                \
+  result->count = input->count;                                    \
+  result->ndims = input->ndims;                                    \
+  result->shape = ALLOC_N(size_t, result->ndims);                  \
+                                                                   \
+  for(size_t index = 0; index < result->ndims; index++){           \
+    result->shape[index] = input->shape[index];                    \
+  }                                                                \
+                                                                   \
+  result->elements = ALLOC_N(double, result->count);               \
+  for(size_t index = 0; index < input->count; index++){            \
+    result->elements[index] = oper(input->elements[index]);      \
+  }                                                                \
+                                                                   \
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);         \
+}
+
+DEF_UNARY_RUBY_ACCESSOR(cos, cos)
+DEF_UNARY_RUBY_ACCESSOR(tan, tan)
+DEF_UNARY_RUBY_ACCESSOR(asin, asin)
+DEF_UNARY_RUBY_ACCESSOR(acos, acos)
+DEF_UNARY_RUBY_ACCESSOR(atan, atan)
+DEF_UNARY_RUBY_ACCESSOR(sinh, sinh)
+DEF_UNARY_RUBY_ACCESSOR(cosh, cosh)
+DEF_UNARY_RUBY_ACCESSOR(tanh, tanh)
+DEF_UNARY_RUBY_ACCESSOR(asinh, asinh)
+DEF_UNARY_RUBY_ACCESSOR(acosh, acosh)
+DEF_UNARY_RUBY_ACCESSOR(atanh, atanh)
+DEF_UNARY_RUBY_ACCESSOR(exp, exp)
+DEF_UNARY_RUBY_ACCESSOR(log2, log2)
+DEF_UNARY_RUBY_ACCESSOR(log1p, log1p)
+DEF_UNARY_RUBY_ACCESSOR(log10, log10)
+DEF_UNARY_RUBY_ACCESSOR(sqrt, sqrt)
+DEF_UNARY_RUBY_ACCESSOR(erf, erf)
+DEF_UNARY_RUBY_ACCESSOR(erfc, erfc)
+DEF_UNARY_RUBY_ACCESSOR(cbrt, cbrt)
+DEF_UNARY_RUBY_ACCESSOR(lgamma, lgamma)
+DEF_UNARY_RUBY_ACCESSOR(tgamma, tgamma)
+DEF_UNARY_RUBY_ACCESSOR(floor, floor)
+DEF_UNARY_RUBY_ACCESSOR(ceil, ceil)
+
+#include "blas.c"

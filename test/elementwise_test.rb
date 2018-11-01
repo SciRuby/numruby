@@ -19,4 +19,16 @@ class NMatrix::ElementWiseTest < Minitest::Test
     assert_equal answer.elements, result.elements
   end
 
+  def test_sin
+    result = NMatrix.new  [2,2],[-0.9, -1, -0.1,   0.2]
+    answer = @left.sin
+    assert_equal answer.elements, result.elements
+  end
+
+  def test_cos
+    result = NMatrix.new  [2,2],[-0.9, -1, -0.1,   0.2]
+    answer = @left.cos
+    assert_equal answer.elements, result.elements
+  end
+
 end
