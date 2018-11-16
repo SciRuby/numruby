@@ -161,9 +161,7 @@ VALUE nm_get_shape(VALUE self){
 
 VALUE nm_add(VALUE self, VALUE another){
   nmatrix* left;
-  nmatrix* right;
   Data_Get_Struct(self, nmatrix, left);
-  Data_Get_Struct(another, nmatrix, right);
 
   nmatrix* result = ALLOC(nmatrix);
   result->count = left->count;
@@ -175,8 +173,19 @@ VALUE nm_add(VALUE self, VALUE another){
   }
 
   result->elements = ALLOC_N(double, result->count);
-  for(size_t index = 0; index < left->count; index++){
-    result->elements[index] = left->elements[index] + right->elements[index];
+
+  if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
+    for(size_t index = 0; index < left->count; index++){
+      result->elements[index] = left->elements[index] + NUM2DBL(another);
+    }
+  }
+  else{
+    nmatrix* right;
+    Data_Get_Struct(another, nmatrix, right);
+
+    for(size_t index = 0; index < left->count; index++){
+      result->elements[index] = left->elements[index] + right->elements[index];
+    }
   }
 
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
@@ -185,9 +194,7 @@ VALUE nm_add(VALUE self, VALUE another){
 #define DEF_ELEMENTWISE_RUBY_ACCESSOR(name, oper)  \
 VALUE nm_##name(VALUE self, VALUE another){        \
   nmatrix* left;                                   \
-  nmatrix* right;                                  \
   Data_Get_Struct(self, nmatrix, left);            \
-  Data_Get_Struct(another, nmatrix, right);        \
                                                    \
   nmatrix* result = ALLOC(nmatrix);                \
   result->count = left->count;                     \
@@ -198,11 +205,20 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     result->shape[index] = left->shape[index];                       \
   }                                                                  \
                                                                      \
-  result->elements = ALLOC_N(double, result->count);                 \
-  for(size_t index = 0; index < left->count; index++){               \
-    result->elements[index] = (left->elements[index]) oper (right->elements[index]); \
+  if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){   \
+    result->elements = ALLOC_N(double, result->count);               \
+    for(size_t index = 0; index < left->count; index++){             \
+      result->elements[index] = (left->elements[index]) oper + (NUM2DBL(another)); \
+    }                                                                  \
+  }                                                                    \
+  else{                                                                \
+    nmatrix* right;                                                    \
+    Data_Get_Struct(another, nmatrix, right);                          \
+    result->elements = ALLOC_N(double, result->count);                 \
+    for(size_t index = 0; index < left->count; index++){               \
+      result->elements[index] = (left->elements[index]) oper (right->elements[index]); \
+    }                                                                                \
   }                                                                                \
-                                                                                  \
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);                         \
 }
 
