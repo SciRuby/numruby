@@ -14,7 +14,7 @@ Gem::Specification.new do |gem|
   gem.files       = ['lib/nmatrix.rb']
   gem.homepage    = 'http://rubygems.org/gems/nmatrix'
   gem.license     = 'BSD-3-Clause'
-  # gem.extensions  = ['ext/extconf.rb']
+  gem.extensions  = %w[ext/extconf.rb]
   gem.files       = `git ls-files -- ext/`.split("\n")
   gem.files      += `git ls-files -- lib`.split("\n")
   gem.require_paths = ["lib"]
