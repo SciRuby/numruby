@@ -2,10 +2,6 @@ require_relative 'mkmf.rb'
 
 extension_name = 'nmatrix'
 
-nmatrix_path = Gem::Specification.find_all_by_name('nmatrix').compact
-abort "Cannot locate NMatrix installation" unless nmatrix_path
-nmatrix_header_dir = File.join(nmatrix_path[0].require_path)
-
 $INSTALLFILES = [
   ['ruby_nmatrix.h'       , '$(archdir)'],
   # ['ruby_nmatrix.hpp'     , '$(archdir)'],
@@ -26,7 +22,6 @@ HEADER_DIRS = [
   '/usr/local/include',
   INCLUDEDIR,
   '/usr/include',
-  nmatrix_header_dir
 ]
 
 LIB_DIRS = [
@@ -34,7 +29,6 @@ LIB_DIRS = [
   '/usr/local/lib',
   LIBDIR,
   '/usr/lib',
-  nmatrix_header_dir
 ]
 
 dir_config(extension_name, HEADER_DIRS, LIB_DIRS)
