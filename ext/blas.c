@@ -5,12 +5,12 @@ VALUE nm_dot(VALUE self, VALUE another){
   Data_Get_Struct(another, nmatrix, right);
 
   nmatrix* result = ALLOC(nmatrix);
-  result->count = left->count;
   result->ndims = left->ndims;
   result->shape = ALLOC_N(size_t, result->ndims);
 
   result->shape[0] =  left->shape[0];
   result->shape[1] = right->shape[1];
+  result->count = result->shape[0] * result->shape[1];
 
   result->elements = ALLOC_N(double, result->shape[0] * result->shape[1]);
   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, (int)left->shape[0], (int)right->shape[1], (int)left->shape[1], /*no scaling*/

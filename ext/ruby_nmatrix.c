@@ -58,6 +58,12 @@ DECL_UNARY_RUBY_ACCESSOR(ceil)
 
 VALUE nm_dot(VALUE self, VALUE another);
 
+VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self);
+VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self);
+VALUE nm_get_rank(VALUE self, VALUE dim);
+VALUE nm_get_dtype(VALUE self);
+VALUE nm_inspect(VALUE self);
+
 void Init_nmatrix() {
   NMatrix = rb_define_class("NMatrix", rb_cObject);
 
@@ -98,6 +104,11 @@ void Init_nmatrix() {
 
   rb_define_method(NMatrix, "dot", nm_dot, 1);
 
+  rb_define_method(NMatrix, "[]", nm_accessor_get, -1);
+  rb_define_method(NMatrix, "[]=", nm_accessor_set, -1);
+  rb_define_method(NMatrix, "row", nm_get_rank, 1);
+  rb_define_method(NMatrix, "dtype", nm_get_dtype, 0);
+  rb_define_method(NMatrix, "inspect", nm_inspect, 0);
 }
 
 
@@ -292,5 +303,54 @@ DEF_UNARY_RUBY_ACCESSOR(lgamma, lgamma)
 DEF_UNARY_RUBY_ACCESSOR(tgamma, tgamma)
 DEF_UNARY_RUBY_ACCESSOR(floor, floor)
 DEF_UNARY_RUBY_ACCESSOR(ceil, ceil)
+
+VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
+  nmatrix* input;
+  Data_Get_Struct(self, nmatrix, input);
+
+  return Qnil;
+}
+
+VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self){
+  nmatrix* input;
+  Data_Get_Struct(self, nmatrix, input);
+
+  return Qnil;
+}
+
+VALUE nm_get_rank(VALUE self, VALUE dim_val){
+  nmatrix* input;
+  Data_Get_Struct(self, nmatrix, input);
+  size_t dim = NUM2LONG(dim_val);
+
+  //get row
+
+  nmatrix* result = ALLOC(nmatrix);
+  result->count = input->shape[1];
+  result->ndims = 2;
+  result->shape = ALLOC_N(size_t, result->ndims);
+  result->shape[0] = 1;
+  result->shape[1] = input->shape[1];
+
+  result->elements = ALLOC_N(double, input->shape[1]);
+
+  for (size_t i = 0; i < input->shape[1]; ++i)
+  {
+    result->elements[i] = input->elements[input->shape[1]*dim + i];
+  }
+
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+}
+
+VALUE nm_get_dtype(VALUE self){
+  return Qnil;
+}
+
+VALUE nm_inspect(VALUE self){
+  char*  c = "Class: NMatrix";
+
+  return rb_str_new_cstr(c);
+}
+
 
 #include "blas.c"
