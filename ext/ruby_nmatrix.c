@@ -15,6 +15,7 @@ VALUE NMatrix = Qnil;
 
 void Init_nmatrix();
 VALUE nmatrix_init(int argc, VALUE* argv, VALUE self);
+VALUE nm_get_dim(VALUE self);
 VALUE nm_get_elements(VALUE self);
 VALUE nm_get_shape(VALUE self);
 VALUE nm_alloc(VALUE klass);
@@ -69,7 +70,8 @@ void Init_nmatrix() {
 
   rb_define_alloc_func(NMatrix, nm_alloc);
   rb_define_method(NMatrix, "initialize", nmatrix_init, -1);
-  rb_define_method(NMatrix, "shape", nm_get_shape, 0);
+  rb_define_method(NMatrix, "dim",      nm_get_dim, -1);
+  rb_define_method(NMatrix, "shape",    nm_get_shape, 0);
   rb_define_method(NMatrix, "elements", nm_get_elements, 0);
 
   rb_define_method(NMatrix, "+", nm_add, 1);
@@ -142,6 +144,10 @@ VALUE nm_alloc(VALUE klass)
 
 void nm_free(nmatrix* mat){
   xfree(mat);
+}
+
+VALUE nm_get_dim(VALUE self){
+  return INT2NUM(2);
 }
 
 VALUE nm_get_elements(VALUE self){
