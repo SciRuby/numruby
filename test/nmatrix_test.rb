@@ -14,4 +14,13 @@ class NMatrix::CreationTest < Minitest::Test
     assert_equal [1, 4.2, 3, 4], @i.elements
   end
 
+  def test_accessor_get
+    assert_equal @i[0,1], 4.2
+  end
+
+  def test_accessor_set
+    @i[0,0] = 6
+    assert_equal @i[0,0], 6
+  end
+
 end

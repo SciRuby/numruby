@@ -11,9 +11,15 @@ typedef struct NMATRIX_STRUCT
   double* elements;
 }nmatrix;
 
+VALUE NumRuby = Qnil;
 VALUE NMatrix = Qnil;
 
 void Init_nmatrix();
+
+VALUE constant_nmatrix(int argc, VALUE* argv, double constant);
+VALUE zeros_nmatrix(int argc, VALUE* argv);
+VALUE ones_nmatrix(int argc, VALUE* argv);
+
 VALUE nmatrix_init(int argc, VALUE* argv, VALUE self);
 VALUE nm_get_dim(VALUE self);
 VALUE nm_get_elements(VALUE self);
@@ -66,6 +72,11 @@ VALUE nm_get_dtype(VALUE self);
 VALUE nm_inspect(VALUE self);
 
 void Init_nmatrix() {
+  NumRuby = rb_define_module("NumRuby");
+  rb_define_singleton_method(NumRuby, "zeros",  zeros_nmatrix, -1);
+  rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
+  // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
+
   NMatrix = rb_define_class("NMatrix", rb_cObject);
 
   rb_define_alloc_func(NMatrix, nm_alloc);
@@ -113,6 +124,34 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "inspect", nm_inspect, 0);
 }
 
+VALUE zeros_nmatrix(int argc, VALUE* argv){
+  return constant_nmatrix(argc, argv, 0);
+}
+
+VALUE ones_nmatrix(int argc, VALUE* argv){
+  return constant_nmatrix(argc, argv, 1);
+}
+
+VALUE constant_nmatrix(int argc, VALUE* argv, double constant){
+  nmatrix* mat = ALLOC(nmatrix);
+
+  mat->ndims = 2;
+  mat->count = 1;
+  mat->shape = ALLOC_N(size_t, mat->ndims);
+  for (size_t index = 0; index < mat->ndims; index++) {
+    printf("%ld\n", index);
+    mat->shape[index] = (size_t)FIX2LONG(RARRAY_AREF(argv[0], index));
+    printf("%ld\n", index);
+    mat->count *= mat->shape[index];
+  }
+
+  mat->elements = ALLOC_N(double, mat->count);
+  for (size_t index = 0; index < mat->count; index++) {
+    mat->elements[index] = constant;
+  }
+
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, mat);
+}
 
 VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
   nmatrix* mat;
@@ -311,17 +350,25 @@ DEF_UNARY_RUBY_ACCESSOR(floor, floor)
 DEF_UNARY_RUBY_ACCESSOR(ceil, ceil)
 
 VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
-  nmatrix* input;
-  Data_Get_Struct(self, nmatrix, input);
+  nmatrix* nmat;
+  Data_Get_Struct(self, nmatrix, nmat);
 
-  return Qnil;
+  size_t index = (size_t)FIX2LONG(argv[0]) * nmat->shape[1] +  (size_t)FIX2LONG(argv[1]);
+
+  double val = nmat->elements[index];
+
+  return DBL2NUM(val);
 }
 
 VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self){
-  nmatrix* input;
-  Data_Get_Struct(self, nmatrix, input);
+  nmatrix* nmat;
+  Data_Get_Struct(self, nmatrix, nmat);
 
-  return Qnil;
+  size_t index = (size_t)FIX2LONG(argv[0]) * nmat->shape[1] +  (size_t)FIX2LONG(argv[1]);
+
+  nmat->elements[index] = NUM2DBL(argv[2]);
+
+  return argv[2];
 }
 
 VALUE nm_get_rank(VALUE self, VALUE dim_val){
