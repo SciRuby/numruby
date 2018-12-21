@@ -3,8 +3,63 @@
 #include "cblas.h"
 #include "math.h"
 
+# define NM_NUM_DTYPES 4
+# define NM_NUM_STYPES 2
+
+typedef enum nm_dtype{
+  nm_int,
+  nm_float32,
+  nm_float64,
+  nm_complex
+}nm_dtype;
+
+const char* const DTYPE_NAMES[NM_NUM_DTYPES] = {
+  "nm_int",
+  "nm_float32",
+  "nm_float64",
+  "nm_complex"
+};
+
+typedef enum nm_stype{
+  nm_dense,
+  nm_sparse
+}nm_stype;
+
+const char* const STYPE_NAMES[NM_NUM_STYPES] = {
+  "nm_dense",
+  "nm_sparse"
+};
+
+nm_dtype nm_dtype_from_rbsymbol(VALUE sym) {
+  ID sym_id = SYM2ID(sym);
+
+  for (size_t index = 0; index < NM_NUM_DTYPES; ++index) {
+    if (sym_id == rb_intern(DTYPE_NAMES[index])) {
+      return (nm_dtype)index;
+    }
+  }
+
+  VALUE str = rb_any_to_s(sym);
+  rb_raise(rb_eArgError, "invalid data type symbol (:%s) specified", RSTRING_PTR(str));
+}
+
+nm_dtype nm_stype_from_rbsymbol(VALUE sym) {
+  ID sym_id = SYM2ID(sym);
+
+  for (size_t index = 0; index < NM_NUM_STYPES; ++index) {
+    if (sym_id == rb_intern(STYPE_NAMES[index])) {
+      return (nm_stype)index;
+    }
+  }
+
+  VALUE str = rb_any_to_s(sym);
+  rb_raise(rb_eArgError, "invalid storage type symbol (:%s) specified", RSTRING_PTR(str));
+}
+
 typedef struct NMATRIX_STRUCT
 {
+  nm_dtype dtype;
+  nm_stype stype;
   size_t ndims;
   size_t count;
   size_t* shape;
@@ -26,6 +81,8 @@ VALUE nm_get_elements(VALUE self);
 VALUE nm_get_shape(VALUE self);
 VALUE nm_alloc(VALUE klass);
 void nm_free(nmatrix* mat);
+
+VALUE nm_eqeq(VALUE self, VALUE another);
 
 VALUE nm_add(VALUE self, VALUE another);
 
@@ -69,6 +126,7 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self);
 VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self);
 VALUE nm_get_rank(VALUE self, VALUE dim);
 VALUE nm_get_dtype(VALUE self);
+VALUE nm_get_stype(VALUE self);
 VALUE nm_inspect(VALUE self);
 
 void Init_nmatrix() {
@@ -84,6 +142,10 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "dim",      nm_get_dim, -1);
   rb_define_method(NMatrix, "shape",    nm_get_shape, 0);
   rb_define_method(NMatrix, "elements", nm_get_elements, 0);
+  rb_define_method(NMatrix, "dtype",    nm_get_dtype, 0);
+  rb_define_method(NMatrix, "stype",    nm_get_stype, 0);
+
+  rb_define_method(NMatrix, "==", nm_eqeq, 1);
 
   rb_define_method(NMatrix, "+", nm_add, 1);
   rb_define_method(NMatrix, "-", nm_subtract, 1);
@@ -169,6 +231,8 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
     for (size_t index = 0; index < mat->count; index++) {
       mat->elements[index] = (double)NUM2DBL(RARRAY_AREF(argv[1], index));
     }
+    mat->dtype = (argc > 2) ? nm_dtype_from_rbsymbol(argv[2]) : nm_float64;
+    mat->stype = (argc > 3) ? nm_stype_from_rbsymbol(argv[3]) : nm_dense;
   }
 
   return self;
@@ -213,6 +277,35 @@ VALUE nm_get_shape(VALUE self){
   }
 
   return rb_ary_new4(input->ndims, array);
+}
+
+VALUE nm_get_dtype(VALUE self){
+  nmatrix* nmat;
+  Data_Get_Struct(self, nmatrix, nmat);
+
+  return rb_str_new_cstr(DTYPE_NAMES[nmat->dtype]);
+}
+
+VALUE nm_get_stype(VALUE self){
+  nmatrix* nmat;
+  Data_Get_Struct(self, nmatrix, nmat);
+
+  return rb_str_new_cstr(STYPE_NAMES[nmat->stype]);
+}
+
+VALUE nm_eqeq(VALUE self, VALUE another){
+  nmatrix* left;
+  nmatrix* right;
+  Data_Get_Struct(self, nmatrix, left);
+  Data_Get_Struct(another, nmatrix, right);
+
+  for(size_t index = 0; index < left->count; index++){
+    if(fabs(left->elements[index] - right->elements[index]) > 1e-3){
+      return Qfalse;
+    }
+  }
+
+  return Qtrue;
 }
 
 VALUE nm_add(VALUE self, VALUE another){
@@ -395,12 +488,8 @@ VALUE nm_get_rank(VALUE self, VALUE dim_val){
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
-VALUE nm_get_dtype(VALUE self){
-  return Qnil;
-}
-
 VALUE nm_inspect(VALUE self){
-  char*  c = "Class: NMatrix";
+  const char* c = "Class: NMatrix";
 
   return rb_str_new_cstr(c);
 }

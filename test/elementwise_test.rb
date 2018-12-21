@@ -10,25 +10,25 @@ class NMatrix::ElementWiseTest < Minitest::Test
   def test_add
     result = NMatrix.new  [2,2],[2.9, 9.4, 6.1,   8.2]
     answer = @left + @right
-    assert_equal answer.elements, result.elements
+    assert_equal answer, result
   end
 
   def test_subtract
     result = NMatrix.new  [2,2],[-0.9, -1, -0.1,   0.2]
     answer = @left - @right
-    assert_equal answer.elements, result.elements
+    assert_equal answer, result
   end
 
   def test_sin
-    result = NMatrix.new  [2,2],[-0.9, -1, -0.1,   0.2]
+    result = NMatrix.new [2,2], @left.elements.map{ |x| Math.send(:sin, x) }
     answer = @left.sin
-    assert_equal answer.elements, result.elements
+    assert_equal answer, result
   end
 
   def test_cos
-    result = NMatrix.new  [2,2],[-0.9, -1, -0.1,   0.2]
+    result = NMatrix.new [2,2], @left.elements.map{ |x| Math.send(:cos, x) }
     answer = @left.cos
-    assert_equal answer.elements, result.elements
+    assert_equal answer, result
   end
 
 end
