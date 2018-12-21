@@ -183,7 +183,7 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "[]=", nm_accessor_set, -1);
   rb_define_method(NMatrix, "row", nm_get_rank, 1);
   rb_define_method(NMatrix, "dtype", nm_get_dtype, 0);
-  rb_define_method(NMatrix, "inspect", nm_inspect, 0);
+  // rb_define_method(NMatrix, "inspect", nm_inspect, 0);
 }
 
 VALUE zeros_nmatrix(int argc, VALUE* argv){
@@ -196,7 +196,8 @@ VALUE ones_nmatrix(int argc, VALUE* argv){
 
 VALUE constant_nmatrix(int argc, VALUE* argv, double constant){
   nmatrix* mat = ALLOC(nmatrix);
-
+  mat->stype = nm_dense;
+  mat->dtype = nm_float64;
   mat->ndims = 2;
   mat->count = 1;
   mat->shape = ALLOC_N(size_t, mat->ndims);

@@ -31,4 +31,10 @@ class NMatrix::ElementWiseTest < Minitest::Test
     assert_equal answer, result
   end
 
+  def test_tan
+    result = NMatrix.new [2,2], @left.elements.map{ |x| Math.send(:tan, x) }
+    answer = @left.tan
+    assert_equal answer, result
+  end
+
 end
