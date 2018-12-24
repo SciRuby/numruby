@@ -5,6 +5,8 @@ VALUE nm_dot(VALUE self, VALUE another){
   Data_Get_Struct(another, nmatrix, right);
 
   nmatrix* result = ALLOC(nmatrix);
+  result->dtype = left->dtype;
+  result->stype = left->stype;
   result->ndims = left->ndims;
   result->shape = ALLOC_N(size_t, result->ndims);
 
@@ -12,8 +14,22 @@ VALUE nm_dot(VALUE self, VALUE another){
   result->shape[1] = right->shape[1];
   result->count = result->shape[0] * result->shape[1];
 
-  result->elements = ALLOC_N(double, result->shape[0] * result->shape[1]);
-  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, (int)left->shape[0], (int)right->shape[1], (int)left->shape[1], /*no scaling*/
-       1, left->elements, (int)left->shape[1], right->elements, (int)right->shape[1], /*no addition*/0, result->elements, (int)right->shape[1]);
+  switch (left->dtype) {
+    case nm_float64:
+    {
+      result->elements = ALLOC_N(double, result->shape[0] * result->shape[1]);
+      cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, (int)left->shape[0], (int)right->shape[1], (int)left->shape[1], /*no scaling*/
+                  1, left->elements, (int)left->shape[1], right->elements, (int)right->shape[1], /*no addition*/0, result->elements, (int)right->shape[1]);
+      break;
+    }
+    case nm_float32:
+    {
+      result->elements = ALLOC_N(float, result->shape[0] * result->shape[1]);
+      cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, (int)left->shape[0], (int)right->shape[1], (int)left->shape[1], /*no scaling*/
+                  1, left->elements, (int)left->shape[1], right->elements, (int)right->shape[1], /*no addition*/0, result->elements, (int)right->shape[1]);
+      break;
+    }
+  }
+
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }

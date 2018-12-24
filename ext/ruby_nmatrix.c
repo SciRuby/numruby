@@ -7,10 +7,8 @@
 # define NM_NUM_STYPES 2
 
 typedef enum nm_dtype{
-  nm_int,
   nm_float32,
   nm_float64,
-  nm_complex
 }nm_dtype;
 
 const char* const DTYPE_NAMES[NM_NUM_DTYPES] = {
@@ -230,12 +228,28 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
       mat->shape[index] = (size_t)FIX2LONG(RARRAY_AREF(argv[0], index));
       mat->count *= mat->shape[index];
     }
-    double* elements = ALLOC_N(double, mat->count);
-    for (size_t index = 0; index < mat->count; index++) {
-      elements[index] = (double)NUM2DBL(RARRAY_AREF(argv[1], index));
-    }
-    mat->elements = elements;
     mat->dtype = (argc > 2) ? nm_dtype_from_rbsymbol(argv[2]) : nm_float64;
+    switch (mat->dtype) {
+      case nm_float64:
+      {
+        double* elements = ALLOC_N(double, mat->count);
+        for (size_t index = 0; index < mat->count; index++) {
+          elements[index] = (double)NUM2DBL(RARRAY_AREF(argv[1], index));
+        }
+        mat->elements = elements;
+        break;
+      }
+      case nm_float32:
+      {
+        float* elements = ALLOC_N(float, mat->count);
+        for (size_t index = 0; index < mat->count; index++) {
+          elements[index] = (float)NUM2DBL(RARRAY_AREF(argv[1], index));
+        }
+        mat->elements = elements;
+        break;
+      }
+    }
+
     mat->stype = (argc > 3) ? nm_stype_from_rbsymbol(argv[3]) : nm_dense;
   }
 
@@ -263,9 +277,24 @@ VALUE nm_get_elements(VALUE self){
   Data_Get_Struct(self, nmatrix, input);
 
   VALUE* array = ALLOC_N(VALUE, input->count);
-  double* elements = (double*)input->elements;
-  for (size_t index = 0; index < input->count; index++){
-    array[index] = DBL2NUM(elements[index]);
+
+  switch (input->dtype) {
+    case nm_float64:
+    {
+      double* elements = (double*)input->elements;
+      for (size_t index = 0; index < input->count; index++){
+        array[index] = DBL2NUM(elements[index]);
+      }
+      break;
+    }
+    case nm_float32:
+    {
+      float* elements = (float*)input->elements;
+      for (size_t index = 0; index < input->count; index++){
+        array[index] = DBL2NUM(elements[index]);
+      }
+      break;
+    }
   }
 
   return rb_ary_new4(input->count, array);
@@ -322,6 +351,8 @@ VALUE nm_add(VALUE self, VALUE another){
   double* left_elements = (double*)left->elements;
 
   nmatrix* result = ALLOC(nmatrix);
+  result->dtype = left->dtype;
+  result->stype = left->stype;
   result->count = left->count;
   result->ndims = left->ndims;
   result->shape = ALLOC_N(size_t, result->ndims);
@@ -358,6 +389,8 @@ VALUE nm_##name(VALUE self, VALUE another){        \
   double* left_elements = (double*)left->elements; \
                                                    \
   nmatrix* result = ALLOC(nmatrix);                \
+  result->dtype = left->dtype;                     \
+  result->stype = left->stype;                     \
   result->count = left->count;                     \
   result->ndims = left->ndims;                     \
   result->shape = ALLOC_N(size_t, result->ndims);  \
@@ -395,6 +428,8 @@ VALUE nm_sin(VALUE self){
   double* input_elements = (double*)input->elements;
 
   nmatrix* result = ALLOC(nmatrix);
+  result->dtype = input->dtype;
+  result->stype = input->stype;
   result->count = input->count;
   result->ndims = input->ndims;
   result->shape = ALLOC_N(size_t, result->ndims);
@@ -416,9 +451,11 @@ VALUE nm_sin(VALUE self){
 static VALUE nm_##name(VALUE self) {                               \
   nmatrix* input;                                                  \
   Data_Get_Struct(self, nmatrix, input);                           \
-  double* input_elements = (double*)input->elements;                 \
+  double* input_elements = (double*)input->elements;               \
                                                                    \
   nmatrix* result = ALLOC(nmatrix);                                \
+  result->dtype = input->dtype;                                    \
+  result->stype = input->stype;                                    \
   result->count = input->count;                                    \
   result->ndims = input->ndims;                                    \
   result->shape = ALLOC_N(size_t, result->ndims);                  \
@@ -494,6 +531,8 @@ VALUE nm_get_rank(VALUE self, VALUE dim_val){
   //get row
 
   nmatrix* result = ALLOC(nmatrix);
+  result->dtype = input->dtype;
+  result->stype = input->stype;
   result->count = input->shape[1];
   result->ndims = 2;
   result->shape = ALLOC_N(size_t, result->ndims);
