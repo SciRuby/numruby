@@ -29,6 +29,20 @@ VALUE nm_dot(VALUE self, VALUE another){
                   1, left->elements, (int)left->shape[1], right->elements, (int)right->shape[1], /*no addition*/0, result->elements, (int)right->shape[1]);
       break;
     }
+    case nm_complex32:
+    {
+      result->elements = ALLOC_N(complex float, result->shape[0] * result->shape[1]);
+      cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, (int)left->shape[0], (int)right->shape[1], (int)left->shape[1], /*no scaling*/
+                  1, left->elements, (int)left->shape[1], right->elements, (int)right->shape[1], /*no addition*/0, result->elements, (int)right->shape[1]);
+      break;
+    }
+    case nm_complex64:
+    {
+      result->elements = ALLOC_N(complex double, result->shape[0] * result->shape[1]);
+      cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, (int)left->shape[0], (int)right->shape[1], (int)left->shape[1], /*no scaling*/
+                  1, left->elements, (int)left->shape[1], right->elements, (int)right->shape[1], /*no addition*/0, result->elements, (int)right->shape[1]);
+      break;
+    }
   }
 
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);

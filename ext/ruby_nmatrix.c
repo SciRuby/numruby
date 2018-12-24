@@ -4,17 +4,21 @@
 #include "math.h"
 #include "complex.h"
 
-# define NM_NUM_DTYPES 2
+# define NM_NUM_DTYPES 4
 # define NM_NUM_STYPES 2
 
 typedef enum nm_dtype{
   nm_float32,
   nm_float64,
+  nm_complex32,
+  nm_complex64
 }nm_dtype;
 
 const char* const DTYPE_NAMES[NM_NUM_DTYPES] = {
   "nm_float32",
   "nm_float64",
+  "nm_complex32",
+  "nm_complex64"
 };
 
 typedef enum nm_stype{
@@ -245,6 +249,26 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
         mat->elements = elements;
         break;
       }
+      case nm_complex32:
+      {
+        float complex* elements = ALLOC_N(float complex, mat->count);
+        for (size_t index = 0; index < mat->count; index++) {
+          VALUE z = RARRAY_AREF(argv[1], index);
+          elements[index] = CMPLXF(NUM2DBL(rb_funcall(z, rb_intern("real"), 0, Qnil)), NUM2DBL(rb_funcall(z, rb_intern("imaginary"), 0, Qnil)));
+        }
+        mat->elements = elements;
+        break;
+      }
+      case nm_complex64:
+      {
+        double complex* elements = ALLOC_N(double complex, mat->count);
+        for (size_t index = 0; index < mat->count; index++) {
+          VALUE z = RARRAY_AREF(argv[1], index);
+          elements[index] = CMPLX(NUM2DBL(rb_funcall(z, rb_intern("real"), 0, Qnil)), NUM2DBL(rb_funcall(z, rb_intern("imaginary"), 0, Qnil)));
+        }
+        mat->elements = elements;
+        break;
+      }
     }
 
     mat->stype = (argc > 3) ? nm_stype_from_rbsymbol(argv[3]) : nm_dense;
@@ -289,6 +313,22 @@ VALUE nm_get_elements(VALUE self){
       float* elements = (float*)input->elements;
       for (size_t index = 0; index < input->count; index++){
         array[index] = DBL2NUM(elements[index]);
+      }
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* elements = (float complex*)input->elements;
+      for (size_t index = 0; index < input->count; index++){
+        array[index] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
+      }
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* elements = (double complex*)input->elements;
+      for (size_t index = 0; index < input->count; index++){
+        array[index] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
       }
       break;
     }
