@@ -440,6 +440,48 @@ VALUE nm_add(VALUE self, VALUE another){
       result->elements = result_elements;
       break;
     }
+    case nm_complex32:
+    {
+      complex float* left_elements = (complex float*)left->elements;
+      complex float* result_elements = ALLOC_N(complex float, result->count);
+      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
+        for(size_t index = 0; index < left->count; index++){
+          result_elements[index] = left_elements[index] + NUM2DBL(another);
+        }
+      }
+      else{
+        nmatrix* right;
+        Data_Get_Struct(another, nmatrix, right);
+        complex float* right_elements = (complex float*)right->elements;
+
+        for(size_t index = 0; index < left->count; index++){
+          result_elements[index] = left_elements[index] + right_elements[index];
+        }
+      }
+      result->elements = result_elements;
+      break;
+    }
+    case nm_complex64:
+    {
+      complex double* left_elements = (complex double*)left->elements;
+      complex double* result_elements = ALLOC_N(complex double, result->count);
+      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
+        for(size_t index = 0; index < left->count; index++){
+          result_elements[index] = left_elements[index] + NUM2DBL(another);
+        }
+      }
+      else{
+        nmatrix* right;
+        Data_Get_Struct(another, nmatrix, right);
+        complex double* right_elements = (complex double*)right->elements;
+
+        for(size_t index = 0; index < left->count; index++){
+          result_elements[index] = left_elements[index] + right_elements[index];
+        }
+      }
+      result->elements = result_elements;
+      break;
+    }
   }
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
@@ -488,7 +530,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       float* result_elements = ALLOC_N(float, result->count);                    \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
         for(size_t index = 0; index < left->count; index++){                     \
-          result_elements[index] = left_elements[index] + NUM2DBL(another);      \
+          result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
@@ -497,13 +539,55 @@ VALUE nm_##name(VALUE self, VALUE another){        \
         float* right_elements = (float*)right->elements;                         \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                       \
-          result_elements[index] = left_elements[index] + right_elements[index];   \
+          result_elements[index] = (left_elements[index]) oper (right_elements[index]);   \
+        }                                                                          \
+      }                                                                            \
+      result->elements = result_elements;                                          \
+      break;                                                                       \
+    }                                                                             \
+    case nm_complex32:                                                             \
+    {                                                                            \
+      complex float* left_elements = (complex float*)left->elements;                             \
+      complex float* result_elements = ALLOC_N(complex float, result->count);                    \
+      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+        for(size_t index = 0; index < left->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
+        }                                                                        \
+      }                                                                          \
+      else{                                                                      \
+        nmatrix* right;                                                          \
+        Data_Get_Struct(another, nmatrix, right);                                \
+        complex float* right_elements = (complex float*)right->elements;                         \
+                                                                                 \
+        for(size_t index = 0; index < left->count; index++){                       \
+          result_elements[index] = (left_elements[index]) oper (right_elements[index]);   \
         }                                                                          \
       }                                                                            \
       result->elements = result_elements;                                          \
       break;                                                                       \
     }                                                                              \
-  }                                                                                \
+    case nm_complex64:                                                             \
+    {                                                                            \
+      complex double* left_elements = (complex double*)left->elements;                             \
+      complex double* result_elements = ALLOC_N(complex double, result->count);                    \
+      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+        for(size_t index = 0; index < left->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
+        }                                                                        \
+      }                                                                          \
+      else{                                                                      \
+        nmatrix* right;                                                          \
+        Data_Get_Struct(another, nmatrix, right);                                \
+        complex double* right_elements = (complex double*)right->elements;                         \
+                                                                                 \
+        for(size_t index = 0; index < left->count; index++){                       \
+          result_elements[index] = (left_elements[index]) oper (right_elements[index]);   \
+        }                                                                          \
+      }                                                                            \
+      result->elements = result_elements;                                          \
+      break;                                                                       \
+    }                                                                              \
+  }                                                                                 \
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);                         \
 }
 
@@ -542,6 +626,24 @@ VALUE nm_sin(VALUE self){
       double* result_elements = ALLOC_N(double, result->count);
       for(size_t index = 0; index < input->count; index++){
         result_elements[index] = sin(input_elements[index]);
+      }
+      result->elements = result_elements;
+    }
+    case nm_complex32:
+    {
+      complex float* input_elements = (complex float*)input->elements;
+      complex float* result_elements = ALLOC_N(complex float, result->count);
+      for(size_t index = 0; index < input->count; index++){
+        result_elements[index] = csin(input_elements[index]);
+      }
+      result->elements = result_elements;
+    }
+    case nm_complex64:
+    {
+      complex double* input_elements = (complex double*)input->elements;
+      complex double* result_elements = ALLOC_N(complex double, result->count);
+      for(size_t index = 0; index < input->count; index++){
+        result_elements[index] = csin(input_elements[index]);
       }
       result->elements = result_elements;
     }
@@ -586,6 +688,26 @@ static VALUE nm_##name(VALUE self) {                               \
       result->elements = result_elements;                          \
       break;                                                       \
     }                                                              \
+    case nm_complex32:                                             \
+    {                                                              \
+      complex float* input_elements = (complex float*)input->elements;           \
+      complex float* result_elements = ALLOC_N(complex float, result->count);    \
+      for(size_t index = 0; index < input->count; index++){        \
+        result_elements[index] = c##oper(input_elements[index]);      \
+      }                                                            \
+      result->elements = result_elements;                          \
+      break;                                                       \
+    }                                                              \
+    case nm_complex64:                                               \
+    {                                                              \
+      complex double* input_elements = (complex double*)input->elements;           \
+      complex double* result_elements = ALLOC_N(complex double, result->count);    \
+      for(size_t index = 0; index < input->count; index++){        \
+        result_elements[index] = c##oper(input_elements[index]);      \
+      }                                                            \
+      result->elements = result_elements;                          \
+      break;                                                       \
+    }                                                              \
   }                                                                \
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);         \
 }
@@ -602,17 +724,66 @@ DEF_UNARY_RUBY_ACCESSOR(asinh, asinh)
 DEF_UNARY_RUBY_ACCESSOR(acosh, acosh)
 DEF_UNARY_RUBY_ACCESSOR(atanh, atanh)
 DEF_UNARY_RUBY_ACCESSOR(exp, exp)
-DEF_UNARY_RUBY_ACCESSOR(log2, log2)
-DEF_UNARY_RUBY_ACCESSOR(log1p, log1p)
 DEF_UNARY_RUBY_ACCESSOR(log10, log10)
 DEF_UNARY_RUBY_ACCESSOR(sqrt, sqrt)
-DEF_UNARY_RUBY_ACCESSOR(erf, erf)
-DEF_UNARY_RUBY_ACCESSOR(erfc, erfc)
-DEF_UNARY_RUBY_ACCESSOR(cbrt, cbrt)
-DEF_UNARY_RUBY_ACCESSOR(lgamma, lgamma)
-DEF_UNARY_RUBY_ACCESSOR(tgamma, tgamma)
-DEF_UNARY_RUBY_ACCESSOR(floor, floor)
-DEF_UNARY_RUBY_ACCESSOR(ceil, ceil)
+
+#define DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(oper, name)            \
+static VALUE nm_##name(VALUE self) {                               \
+  nmatrix* input;                                                  \
+  Data_Get_Struct(self, nmatrix, input);                           \
+                                                                   \
+  nmatrix* result = ALLOC(nmatrix);                                \
+  result->dtype = input->dtype;                                    \
+  result->stype = input->stype;                                    \
+  result->count = input->count;                                    \
+  result->ndims = input->ndims;                                    \
+  result->shape = ALLOC_N(size_t, result->ndims);                  \
+                                                                   \
+  for(size_t index = 0; index < result->ndims; index++){           \
+    result->shape[index] = input->shape[index];                    \
+  }                                                                \
+  switch(result->dtype){                                           \
+    case nm_float32:                                               \
+    {                                                              \
+      float* input_elements = (float*)input->elements;             \
+      float* result_elements = ALLOC_N(float, result->count);      \
+      for(size_t index = 0; index < input->count; index++){        \
+        result_elements[index] = oper(input_elements[index]);      \
+      }                                                            \
+      result->elements = result_elements;                          \
+      break;                                                       \
+    }                                                              \
+    case nm_float64:                                               \
+    {                                                              \
+      double* input_elements = (double*)input->elements;           \
+      double* result_elements = ALLOC_N(double, result->count);    \
+      for(size_t index = 0; index < input->count; index++){        \
+        result_elements[index] = oper(input_elements[index]);      \
+      }                                                            \
+      result->elements = result_elements;                          \
+      break;                                                       \
+    }                                                              \
+    case nm_complex32:                                             \
+    {                                                              \
+      /* Not supported message */                                  \
+    }                                                              \
+    case nm_complex64:                                             \
+    {                                                              \
+      /* Not supported message */                                  \
+    }                                                              \
+  }                                                                \
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);         \
+}
+
+DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(log2, log2)
+DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(log1p, log1p)
+DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(erf, erf)
+DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(erfc, erfc)
+DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(cbrt, cbrt)
+DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(lgamma, lgamma)
+DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(tgamma, tgamma)
+DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(floor, floor)
+DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(ceil, ceil)
 
 VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
   nmatrix* nmat;

@@ -31,16 +31,20 @@ VALUE nm_dot(VALUE self, VALUE another){
     }
     case nm_complex32:
     {
+      float alpha[2] = {1, 1};
+      float beta[2]  = {0, 0};
       result->elements = ALLOC_N(complex float, result->shape[0] * result->shape[1]);
-      cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, (int)left->shape[0], (int)right->shape[1], (int)left->shape[1], /*no scaling*/
-                  1, left->elements, (int)left->shape[1], right->elements, (int)right->shape[1], /*no addition*/0, result->elements, (int)right->shape[1]);
+      cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, (int)left->shape[0], (int)right->shape[1], (int)left->shape[1], /*no scaling*/
+                  alpha, left->elements, (int)left->shape[1], right->elements, (int)right->shape[1], /*no addition*/beta, result->elements, (int)right->shape[1]);
       break;
     }
     case nm_complex64:
     {
+      double alpha[2] = {1, 1};
+      double beta[2]  = {0, 0};
       result->elements = ALLOC_N(complex double, result->shape[0] * result->shape[1]);
       cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, (int)left->shape[0], (int)right->shape[1], (int)left->shape[1], /*no scaling*/
-                  1, left->elements, (int)left->shape[1], right->elements, (int)right->shape[1], /*no addition*/0, result->elements, (int)right->shape[1]);
+                  alpha, left->elements, (int)left->shape[1], right->elements, (int)right->shape[1], /*no addition*/beta, result->elements, (int)right->shape[1]);
       break;
     }
   }
