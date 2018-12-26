@@ -15,6 +15,11 @@ VALUE nm_dot(VALUE self, VALUE another){
   result->count = result->shape[0] * result->shape[1];
 
   switch (left->dtype) {
+    case nm_int:
+    {
+      ///* Not supported message and casting to double */
+      break;
+    }
     case nm_float64:
     {
       result->elements = ALLOC_N(double, result->shape[0] * result->shape[1]);

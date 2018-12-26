@@ -4,10 +4,11 @@
 #include "math.h"
 #include "complex.h"
 
-# define NM_NUM_DTYPES 4
+# define NM_NUM_DTYPES 5
 # define NM_NUM_STYPES 2
 
 typedef enum nm_dtype{
+  nm_int,
   nm_float32,
   nm_float64,
   nm_complex32,
@@ -15,6 +16,7 @@ typedef enum nm_dtype{
 }nm_dtype;
 
 const char* const DTYPE_NAMES[NM_NUM_DTYPES] = {
+  "nm_int",
   "nm_float32",
   "nm_float64",
   "nm_complex32",
@@ -231,11 +233,11 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
     }
     mat->dtype = (argc > 2) ? nm_dtype_from_rbsymbol(argv[2]) : nm_float64;
     switch (mat->dtype) {
-      case nm_float64:
+      case nm_int:
       {
-        double* elements = ALLOC_N(double, mat->count);
+        int* elements = ALLOC_N(int, mat->count);
         for (size_t index = 0; index < mat->count; index++) {
-          elements[index] = (double)NUM2DBL(RARRAY_AREF(argv[1], index));
+          elements[index] = (int)NUM2INT(RARRAY_AREF(argv[1], index));
         }
         mat->elements = elements;
         break;
@@ -245,6 +247,15 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
         float* elements = ALLOC_N(float, mat->count);
         for (size_t index = 0; index < mat->count; index++) {
           elements[index] = (float)NUM2DBL(RARRAY_AREF(argv[1], index));
+        }
+        mat->elements = elements;
+        break;
+      }
+      case nm_float64:
+      {
+        double* elements = ALLOC_N(double, mat->count);
+        for (size_t index = 0; index < mat->count; index++) {
+          elements[index] = (double)NUM2DBL(RARRAY_AREF(argv[1], index));
         }
         mat->elements = elements;
         break;
@@ -300,6 +311,14 @@ VALUE nm_get_elements(VALUE self){
   VALUE* array = ALLOC_N(VALUE, input->count);
 
   switch (input->dtype) {
+    case nm_int:
+    {
+      int* elements = (int*)input->elements;
+      for (size_t index = 0; index < input->count; index++){
+        array[index] = INT2NUM(elements[index]);
+      }
+      break;
+    }
     case nm_float64:
     {
       double* elements = (double*)input->elements;
@@ -398,6 +417,27 @@ VALUE nm_add(VALUE self, VALUE another){
   }
 
   switch (result->dtype) {
+    case nm_int:
+    {
+      int* left_elements = (int*)left->elements;
+      int* result_elements = ALLOC_N(int, result->count);
+      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
+        for(size_t index = 0; index < left->count; index++){
+          result_elements[index] = left_elements[index] + NUM2DBL(another);
+        }
+      }
+      else{
+        nmatrix* right;
+        Data_Get_Struct(another, nmatrix, right);
+        int* right_elements = (int*)right->elements;
+
+        for(size_t index = 0; index < left->count; index++){
+          result_elements[index] = left_elements[index] + right_elements[index];
+        }
+      }
+      result->elements = result_elements;
+      break;
+    }
     case nm_float64:
     {
       double* left_elements = (double*)left->elements;
@@ -503,6 +543,27 @@ VALUE nm_##name(VALUE self, VALUE another){        \
   }                                                                  \
                                                                      \
   switch (result->dtype) {                                                       \
+    case nm_int:                                                                 \
+    {                                                                            \
+      int* left_elements = (int*)left->elements;                           \
+      int* result_elements = ALLOC_N(int, result->count);                  \
+      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+        for(size_t index = 0; index < left->count; index++){                     \
+          result_elements[index] = left_elements[index] + NUM2DBL(another);      \
+        }                                                                        \
+      }                                                                          \
+      else{                                                                      \
+        nmatrix* right;                                                          \
+        Data_Get_Struct(another, nmatrix, right);                                \
+        int* right_elements = (int*)right->elements;                       \
+                                                                                 \
+        for(size_t index = 0; index < left->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
+        }                                                                        \
+      }                                                                          \
+      result->elements = result_elements;                                        \
+      break;                                                                     \
+    }                                                                            \
     case nm_float64:                                                             \
     {                                                                            \
       double* left_elements = (double*)left->elements;                           \
@@ -611,6 +672,16 @@ VALUE nm_sin(VALUE self){
   }
 
   switch(result->dtype){
+    case nm_int:
+    {
+      int* input_elements = (int*)input->elements;
+      int* result_elements = ALLOC_N(int, result->count);
+      for(size_t index = 0; index < input->count; index++){
+        result_elements[index] = sin(input_elements[index]);
+      }
+      result->elements = result_elements;
+      break;
+    }
     case nm_float32:
     {
       float* input_elements = (float*)input->elements;
@@ -619,6 +690,7 @@ VALUE nm_sin(VALUE self){
         result_elements[index] = sin(input_elements[index]);
       }
       result->elements = result_elements;
+      break;
     }
     case nm_float64:
     {
@@ -628,6 +700,7 @@ VALUE nm_sin(VALUE self){
         result_elements[index] = sin(input_elements[index]);
       }
       result->elements = result_elements;
+      break;
     }
     case nm_complex32:
     {
@@ -637,6 +710,7 @@ VALUE nm_sin(VALUE self){
         result_elements[index] = csin(input_elements[index]);
       }
       result->elements = result_elements;
+      break;
     }
     case nm_complex64:
     {
@@ -646,6 +720,7 @@ VALUE nm_sin(VALUE self){
         result_elements[index] = csin(input_elements[index]);
       }
       result->elements = result_elements;
+      break;
     }
   }
 
@@ -668,6 +743,16 @@ static VALUE nm_##name(VALUE self) {                               \
     result->shape[index] = input->shape[index];                    \
   }                                                                \
   switch(result->dtype){                                           \
+    case nm_int:                                                   \
+    {                                                              \
+      int* input_elements = (int*)input->elements;                 \
+      int* result_elements = ALLOC_N(int, result->count);          \
+      for(size_t index = 0; index < input->count; index++){        \
+        result_elements[index] = oper(input_elements[index]);      \
+      }                                                            \
+      result->elements = result_elements;                          \
+      break;                                                       \
+    }                                                              \
     case nm_float32:                                               \
     {                                                              \
       float* input_elements = (float*)input->elements;             \
@@ -743,6 +828,16 @@ static VALUE nm_##name(VALUE self) {                               \
     result->shape[index] = input->shape[index];                    \
   }                                                                \
   switch(result->dtype){                                           \
+    case nm_int:                                                   \
+    {                                                              \
+      int* input_elements = (int*)input->elements;                 \
+      int* result_elements = ALLOC_N(int, result->count);          \
+      for(size_t index = 0; index < input->count; index++){        \
+        result_elements[index] = oper(input_elements[index]);      \
+      }                                                            \
+      result->elements = result_elements;                          \
+      break;                                                       \
+    }                                                              \
     case nm_float32:                                               \
     {                                                              \
       float* input_elements = (float*)input->elements;             \
