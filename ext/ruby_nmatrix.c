@@ -28,6 +28,17 @@ typedef enum nm_stype{
   nm_sparse
 }nm_stype;
 
+typedef struct CSR_NMATRIX{
+  size_t count;
+  void* elements;
+  size_t* ia;
+  size_t* ja;
+}csr_nmatrix;
+
+typedef struct SPARSE_STORAGE{
+  csr_nmatrix* csr;
+}sparse_storage;
+
 const char* const STYPE_NAMES[NM_NUM_STYPES] = {
   "nm_dense",
   "nm_sparse"
@@ -67,6 +78,7 @@ typedef struct NMATRIX_STRUCT
   size_t count;
   size_t* shape;
   void* elements;
+  sparse_storage* sp;
 }nmatrix;
 
 VALUE NumRuby = Qnil;
@@ -231,58 +243,97 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
       mat->shape[index] = (size_t)FIX2LONG(RARRAY_AREF(argv[0], index));
       mat->count *= mat->shape[index];
     }
-    mat->dtype = (argc > 2) ? nm_dtype_from_rbsymbol(argv[2]) : nm_float64;
-    switch (mat->dtype) {
-      case nm_int:
+    if(argc < 5){
+      mat->stype = (argc > 3) ? nm_stype_from_rbsymbol(argv[3]) : nm_dense;
+      mat->dtype = (argc > 2) ? nm_dtype_from_rbsymbol(argv[2]) : nm_float64;
+    }
+    else{
+      mat->stype = (argc > 4) ? nm_stype_from_rbsymbol(argv[5]) : nm_dense;
+      mat->dtype = (argc > 5) ? nm_dtype_from_rbsymbol(argv[4]) : nm_float64;
+    }
+
+
+    switch(mat->stype){
+      case nm_dense:
       {
-        int* elements = ALLOC_N(int, mat->count);
-        for (size_t index = 0; index < mat->count; index++) {
-          elements[index] = (int)NUM2INT(RARRAY_AREF(argv[1], index));
+        switch(mat->dtype) {
+          case nm_int:
+          {
+            int* elements = ALLOC_N(int, mat->count);
+            for (size_t index = 0; index < mat->count; index++) {
+              elements[index] = (int)NUM2INT(RARRAY_AREF(argv[1], index));
+            }
+            mat->elements = elements;
+            break;
+          }
+          case nm_float32:
+          {
+            float* elements = ALLOC_N(float, mat->count);
+            for (size_t index = 0; index < mat->count; index++) {
+              elements[index] = (float)NUM2DBL(RARRAY_AREF(argv[1], index));
+            }
+            mat->elements = elements;
+            break;
+          }
+          case nm_float64:
+          {
+            double* elements = ALLOC_N(double, mat->count);
+            for (size_t index = 0; index < mat->count; index++) {
+              elements[index] = (double)NUM2DBL(RARRAY_AREF(argv[1], index));
+            }
+            mat->elements = elements;
+            break;
+          }
+          case nm_complex32:
+          {
+            float complex* elements = ALLOC_N(float complex, mat->count);
+            for (size_t index = 0; index < mat->count; index++) {
+              VALUE z = RARRAY_AREF(argv[1], index);
+              elements[index] = CMPLXF(NUM2DBL(rb_funcall(z, rb_intern("real"), 0, Qnil)), NUM2DBL(rb_funcall(z, rb_intern("imaginary"), 0, Qnil)));
+            }
+            mat->elements = elements;
+            break;
+          }
+          case nm_complex64:
+          {
+            double complex* elements = ALLOC_N(double complex, mat->count);
+            for (size_t index = 0; index < mat->count; index++) {
+              VALUE z = RARRAY_AREF(argv[1], index);
+              elements[index] = CMPLX(NUM2DBL(rb_funcall(z, rb_intern("real"), 0, Qnil)), NUM2DBL(rb_funcall(z, rb_intern("imaginary"), 0, Qnil)));
+            }
+            mat->elements = elements;
+            break;
+          }
         }
-        mat->elements = elements;
         break;
       }
-      case nm_float32:
+      case nm_sparse:
       {
-        float* elements = ALLOC_N(float, mat->count);
-        for (size_t index = 0; index < mat->count; index++) {
-          elements[index] = (float)NUM2DBL(RARRAY_AREF(argv[1], index));
+        switch(mat->dtype){
+          case nm_float64:
+          {
+            double* elements = ALLOC_N(double, RARRAY_LEN(argv[1]));
+            for (size_t index = 0; index < RARRAY_LEN(argv[1]); index++) {
+              elements[index] = (double)NUM2DBL(RARRAY_AREF(argv[1], index));
+            }
+            mat->sp = ALLOC(sparse_storage);
+            mat->sp->csr = ALLOC(csr_nmatrix);
+            mat->sp->csr->count = RARRAY_LEN(argv[1]);
+            mat->sp->csr->elements = elements;
+            mat->sp->csr->ia = ALLOC_N(size_t, RARRAY_LEN(argv[2]));
+            for (size_t index = 0; index < RARRAY_LEN(argv[2]); index++) {
+              mat->sp->csr->ia[index] = (size_t)NUM2ULL(RARRAY_AREF(argv[2], index));
+            }
+            mat->sp->csr->ja = ALLOC_N(size_t, RARRAY_LEN(argv[3]));
+            for (size_t index = 0; index < RARRAY_LEN(argv[3]); index++) {
+              mat->sp->csr->ja[index] = (size_t)NUM2ULL(RARRAY_AREF(argv[3], index));
+            }
+            break;
+          }
         }
-        mat->elements = elements;
-        break;
-      }
-      case nm_float64:
-      {
-        double* elements = ALLOC_N(double, mat->count);
-        for (size_t index = 0; index < mat->count; index++) {
-          elements[index] = (double)NUM2DBL(RARRAY_AREF(argv[1], index));
-        }
-        mat->elements = elements;
-        break;
-      }
-      case nm_complex32:
-      {
-        float complex* elements = ALLOC_N(float complex, mat->count);
-        for (size_t index = 0; index < mat->count; index++) {
-          VALUE z = RARRAY_AREF(argv[1], index);
-          elements[index] = CMPLXF(NUM2DBL(rb_funcall(z, rb_intern("real"), 0, Qnil)), NUM2DBL(rb_funcall(z, rb_intern("imaginary"), 0, Qnil)));
-        }
-        mat->elements = elements;
-        break;
-      }
-      case nm_complex64:
-      {
-        double complex* elements = ALLOC_N(double complex, mat->count);
-        for (size_t index = 0; index < mat->count; index++) {
-          VALUE z = RARRAY_AREF(argv[1], index);
-          elements[index] = CMPLX(NUM2DBL(rb_funcall(z, rb_intern("real"), 0, Qnil)), NUM2DBL(rb_funcall(z, rb_intern("imaginary"), 0, Qnil)));
-        }
-        mat->elements = elements;
         break;
       }
     }
-
-    mat->stype = (argc > 3) ? nm_stype_from_rbsymbol(argv[3]) : nm_dense;
   }
 
   return self;
@@ -305,55 +356,78 @@ VALUE nm_get_dim(VALUE self){
 
 VALUE nm_get_elements(VALUE self){
   nmatrix* input;
-
   Data_Get_Struct(self, nmatrix, input);
 
-  VALUE* array = ALLOC_N(VALUE, input->count);
+  size_t count = input->count;
+  VALUE* array;
 
-  switch (input->dtype) {
-    case nm_int:
+  switch(input->stype){
+    case nm_dense:
     {
-      int* elements = (int*)input->elements;
-      for (size_t index = 0; index < input->count; index++){
-        array[index] = INT2NUM(elements[index]);
+      array = ALLOC_N(VALUE, input->count);
+      switch (input->dtype) {
+        case nm_int:
+        {
+          int* elements = (int*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            array[index] = INT2NUM(elements[index]);
+          }
+          break;
+        }
+        case nm_float64:
+        {
+          double* elements = (double*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            array[index] = DBL2NUM(elements[index]);
+          }
+          break;
+        }
+        case nm_float32:
+        {
+          float* elements = (float*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            array[index] = DBL2NUM(elements[index]);
+          }
+          break;
+        }
+        case nm_complex32:
+        {
+          float complex* elements = (float complex*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            array[index] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
+          }
+          break;
+        }
+        case nm_complex64:
+        {
+          double complex* elements = (double complex*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            array[index] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
+          }
+          break;
+        }
       }
       break;
     }
-    case nm_float64:
+    case nm_sparse:
     {
-      double* elements = (double*)input->elements;
-      for (size_t index = 0; index < input->count; index++){
-        array[index] = DBL2NUM(elements[index]);
-      }
-      break;
-    }
-    case nm_float32:
-    {
-      float* elements = (float*)input->elements;
-      for (size_t index = 0; index < input->count; index++){
-        array[index] = DBL2NUM(elements[index]);
-      }
-      break;
-    }
-    case nm_complex32:
-    {
-      float complex* elements = (float complex*)input->elements;
-      for (size_t index = 0; index < input->count; index++){
-        array[index] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
-      }
-      break;
-    }
-    case nm_complex64:
-    {
-      double complex* elements = (double complex*)input->elements;
-      for (size_t index = 0; index < input->count; index++){
-        array[index] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
+      switch(input->dtype){
+        case nm_float64:
+        {
+          count = input->sp->csr->count;
+          array = ALLOC_N(VALUE, count);
+          double* elements = (double*)input->sp->csr->elements;
+          for (size_t index = 0; index < count; index++){
+            array[index] = DBL2NUM(elements[index]);
+          }
+          break;
+        }
       }
       break;
     }
   }
 
-  return rb_ary_new4(input->count, array);
+  return rb_ary_new4(count, array);
 }
 
 VALUE nm_get_shape(VALUE self){
