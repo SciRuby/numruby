@@ -6,6 +6,7 @@
 
 # define NM_NUM_DTYPES 5
 # define NM_NUM_STYPES 2
+# define NM_NUM_SPARSE_TYPES 4
 
 typedef enum nm_dtype{
   nm_int,
@@ -28,6 +29,25 @@ typedef enum nm_stype{
   nm_sparse
 }nm_stype;
 
+const char* const STYPE_NAMES[NM_NUM_STYPES] = {
+  "nm_dense",
+  "nm_sparse"
+};
+
+typedef struct COO_NMATRIX{
+  size_t count;
+  void* elements;
+  size_t* ia;
+  size_t* ja;
+}coo_nmatrix;
+
+typedef struct CSC_NMATRIX{
+  size_t count;
+  void* elements;
+  size_t* ia;
+  size_t* ja;
+}csc_nmatrix;
+
 typedef struct CSR_NMATRIX{
   size_t count;
   void* elements;
@@ -35,14 +55,15 @@ typedef struct CSR_NMATRIX{
   size_t* ja;
 }csr_nmatrix;
 
+typedef struct DIAG_MATRIX{
+  size_t count;
+  void* elements;
+  size_t* offset;
+}diag_nmatrix;
+
 typedef struct SPARSE_STORAGE{
   csr_nmatrix* csr;
 }sparse_storage;
-
-const char* const STYPE_NAMES[NM_NUM_STYPES] = {
-  "nm_dense",
-  "nm_sparse"
-};
 
 nm_dtype nm_dtype_from_rbsymbol(VALUE sym) {
   ID sym_id = SYM2ID(sym);
@@ -81,8 +102,49 @@ typedef struct NMATRIX_STRUCT
   sparse_storage* sp;
 }nmatrix;
 
+typedef enum nm_sparse_type{
+  coo,
+  csc,
+  csr,
+  dia
+}nm_sparse_type;
+
+const char* const SPARSE_TYPE_NAMES[NM_NUM_SPARSE_TYPES] = {
+  "coo",
+  "csc",
+  "csr",
+  "dia"
+};
+
+nm_sparse_type nm_sparse_type_from_rbsymbol(VALUE sym) {
+  ID sym_id = SYM2ID(sym);
+
+  for (size_t index = 0; index < NM_NUM_SPARSE_TYPES; ++index) {
+    if (sym_id == rb_intern(SPARSE_TYPE_NAMES[index])) {
+      return (nm_sparse_type)index;
+    }
+  }
+
+  VALUE str = rb_any_to_s(sym);
+  rb_raise(rb_eArgError, "invalid storage type symbol (:%s) specified", RSTRING_PTR(str));
+}
+
+typedef struct SPARSE_NMATRIX_STRUCT
+{
+  nm_dtype dtype;
+  nm_sparse_type sptype;
+  size_t ndims;
+  size_t count; //data count
+  size_t* shape;
+  coo_nmatrix* coo;
+  csr_nmatrix* csr;
+  csc_nmatrix* csc;
+  diag_nmatrix* diag;
+}sparse_nmatrix;
+
 VALUE NumRuby = Qnil;
 VALUE NMatrix = Qnil;
+VALUE SparseNMatrix = Qnil;
 
 void Init_nmatrix();
 
@@ -98,7 +160,6 @@ VALUE nm_alloc(VALUE klass);
 void nm_free(nmatrix* mat);
 
 VALUE nm_eqeq(VALUE self, VALUE another);
-
 VALUE nm_add(VALUE self, VALUE another);
 
 #define DECL_ELEMENTWISE_RUBY_ACCESSOR(name)    VALUE nm_##name(VALUE self, VALUE another);
@@ -144,11 +205,40 @@ VALUE nm_get_dtype(VALUE self);
 VALUE nm_get_stype(VALUE self);
 VALUE nm_inspect(VALUE self);
 
+// Sparse Matrix
+
+VALUE nm_sparse_alloc(VALUE klass);
+void  nm_sparse_free(csr_nmatrix* mat);
+VALUE coo_sparse_nmatrix_init(int argc, VALUE* argv);
+VALUE csr_sparse_nmatrix_init(int argc, VALUE* argv);
+VALUE csc_sparse_nmatrix_init(int argc, VALUE* argv);
+VALUE dia_sparse_nmatrix_init(int argc, VALUE* argv);
+VALUE nm_sparse_get_dtype(VALUE self);
+VALUE nm_sparse_get_shape(VALUE self);
+VALUE nm_sparse_to_array(VALUE self);
+VALUE nm_sparse_to_nmatrix(VALUE self);
+
+void get_dense_from_csr(const double* data, const size_t rows,
+                       const size_t cols, const size_t* ia,
+                       const size_t* ja, double* elements);
+
 void Init_nmatrix() {
   NumRuby = rb_define_module("NumRuby");
   rb_define_singleton_method(NumRuby, "zeros",  zeros_nmatrix, -1);
   rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
   // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
+
+  SparseNMatrix = rb_define_class("SparseNMatrix", rb_cObject);
+  rb_define_alloc_func(SparseNMatrix, nm_sparse_alloc);
+  rb_define_singleton_method(SparseNMatrix, "coo", coo_sparse_nmatrix_init, -1);
+  rb_define_singleton_method(SparseNMatrix, "csr", csr_sparse_nmatrix_init, -1);
+  rb_define_singleton_method(SparseNMatrix, "csc", csc_sparse_nmatrix_init, -1);
+  rb_define_singleton_method(SparseNMatrix, "dia", dia_sparse_nmatrix_init, -1);
+
+  rb_define_method(SparseNMatrix, "dtype",      nm_sparse_get_dtype, 0);
+  rb_define_method(SparseNMatrix, "shape",      nm_sparse_get_shape, 0);
+  rb_define_method(SparseNMatrix, "to_array",   nm_sparse_to_array, 0);
+  rb_define_method(SparseNMatrix, "to_nmatrix", nm_sparse_to_nmatrix, 0);
 
   NMatrix = rb_define_class("NMatrix", rb_cObject);
 
@@ -312,20 +402,20 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
         switch(mat->dtype){
           case nm_float64:
           {
-            double* elements = ALLOC_N(double, RARRAY_LEN(argv[1]));
-            for (size_t index = 0; index < RARRAY_LEN(argv[1]); index++) {
+            double* elements = ALLOC_N(double, (size_t)RARRAY_LEN(argv[1]));
+            for (size_t index = 0; index < (size_t)RARRAY_LEN(argv[1]); index++) {
               elements[index] = (double)NUM2DBL(RARRAY_AREF(argv[1], index));
             }
             mat->sp = ALLOC(sparse_storage);
             mat->sp->csr = ALLOC(csr_nmatrix);
-            mat->sp->csr->count = RARRAY_LEN(argv[1]);
+            mat->sp->csr->count = (size_t)RARRAY_LEN(argv[1]);
             mat->sp->csr->elements = elements;
-            mat->sp->csr->ia = ALLOC_N(size_t, RARRAY_LEN(argv[2]));
-            for (size_t index = 0; index < RARRAY_LEN(argv[2]); index++) {
+            mat->sp->csr->ia = ALLOC_N(size_t, (size_t)RARRAY_LEN(argv[2]));
+            for (size_t index = 0; index < (size_t)RARRAY_LEN(argv[2]); index++) {
               mat->sp->csr->ia[index] = (size_t)NUM2ULL(RARRAY_AREF(argv[2], index));
             }
-            mat->sp->csr->ja = ALLOC_N(size_t, RARRAY_LEN(argv[3]));
-            for (size_t index = 0; index < RARRAY_LEN(argv[3]); index++) {
+            mat->sp->csr->ja = ALLOC_N(size_t, (size_t)RARRAY_LEN(argv[3]));
+            for (size_t index = 0; index < (size_t)RARRAY_LEN(argv[3]); index++) {
               mat->sp->csr->ja[index] = (size_t)NUM2ULL(RARRAY_AREF(argv[3], index));
             }
             break;
@@ -359,7 +449,7 @@ VALUE nm_get_elements(VALUE self){
   Data_Get_Struct(self, nmatrix, input);
 
   size_t count = input->count;
-  VALUE* array;
+  VALUE* array = NULL;
 
   switch(input->stype){
     case nm_dense:
@@ -1015,3 +1105,4 @@ VALUE nm_inspect(VALUE self){
 
 
 #include "blas.c"
+#include "sparse.c"
