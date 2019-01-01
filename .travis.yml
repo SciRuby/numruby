@@ -1,0 +1,27 @@
+language: ruby
+sudo: required
+cache: bundler
+os:
+  - linux
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-7
+    - g++-7
+rvm:
+  - 2.1.8
+  - 2.2.4
+  - 2.3.0
+  - 2.4.2
+  - ruby-head
+
+before_install: ./travis.sh before_install
+
+install: ./travis.sh install
+
+script: ./travis.sh script
+
+notifications:
+  irc: "chat.freenode.net#sciruby"

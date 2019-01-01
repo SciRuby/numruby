@@ -85,9 +85,10 @@ else
   puts "g++ reports version... " + `#{CONFIG['CXX']} --version|head -n 1|cut -f 3 -d " "`
 end
 
+$C_STANDARD = 'c99'
 # For release, these next two should both be changed to -O3.
-$CFLAGS += " -O3 "
-#$CFLAGS += " -static -O0 -g "
+$CFLAGS += " -O3 -std=#{$C_STANDARD}"
+#$CFLAGS += " -static -O0 -g -std=#{$C_STANDARD}"
 $CXXFLAGS += " -O3 -std=#{$CXX_STANDARD} " #-fmax-errors=10 -save-temps
 #$CXXFLAGS += " -static -O0 -g -std=#{$CXX_STANDARD} "
 

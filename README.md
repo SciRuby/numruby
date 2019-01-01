@@ -3,6 +3,8 @@ Reimplementing NMatrix for fun
 
 ## NMatrix
 
+[![Build Status](https://travis-ci.org/prasunanand/nmatrix_reloaded.svg?branch=master)](https://travis-ci.org/prasunanand/nmatrix_reloaded)
+
 Fast Numerical Linear Algebra Library for Ruby
 
 ## Installation
