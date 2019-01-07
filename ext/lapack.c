@@ -1,5 +1,37 @@
 VALUE nm_invert(VALUE self){
-  return Qnil;
+  nmatrix* matrix;
+  Data_Get_Struct(self, nmatrix, matrix);
+
+  nmatrix* result = ALLOC(nmatrix);
+  result->dtype = matrix->dtype;
+  result->stype = matrix->stype;
+  result->ndims = matrix->ndims;
+  result->shape = ALLOC_N(size_t, result->ndims);
+
+  result->shape[0] =  matrix->shape[0];
+  result->shape[1] =  matrix->shape[1];
+  result->count = result->shape[0] * result->shape[1];
+  double* elements = ALLOC_N(double, result->shape[0] * result->shape[1]);
+
+
+  int n = (int)matrix->shape[1];
+  int m = (int)matrix->shape[0];
+  int* ipiv = ALLOC_N(int, min(m,n)+1);
+  getrf(matrix->elements, matrix->shape[1], matrix->shape[0], ipiv, elements);
+  int lda = n;
+
+  LAPACKE_dgetri(101, n, elements, lda, ipiv);
+  result->elements = elements;
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+}
+
+
+void getrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, double* arr2) {
+  int m = (int)cols;
+  int n = (int)rows;
+  memcpy(arr2, arr, sizeof(double)*rows*cols);
+  int lda = m;
+  LAPACKE_dgetrf(101,m,n,arr2,lda,ipiv);
 }
 
 VALUE nm_solve(VALUE self, VALUE rhs){
@@ -7,7 +39,31 @@ VALUE nm_solve(VALUE self, VALUE rhs){
 }
 
 VALUE nm_det(VALUE self){
-  return Qnil;
+  nmatrix* matrix;
+  Data_Get_Struct(self, nmatrix, matrix);
+
+  int n = (int)matrix->shape[1];
+  int m = (int)matrix->shape[0];
+
+  double* elements = ALLOC_N(double, matrix->count);
+  int* pivot = ALLOC_N(int, min(m,n)+1);
+
+  getrf(matrix->elements, matrix->shape[1], matrix->shape[0], pivot, elements);
+
+  int num_perm = 0;
+  int j = 0;
+  for(int i = 0; i < min(m,n)+1; ++i){
+    if(pivot[i]-1 != j){num_perm += 1;}
+    j++;
+  }
+  double prod;
+
+  prod = (num_perm % 2 == 1) ? 1 : -1;
+
+  for(int i =0; i < min(m,n); i++){
+    prod *= elements[matrix->shape[0]*i + i];
+  }
+  return DBL2NUM(prod);
 }
 
 VALUE nm_least_square(VALUE self, VALUE rhs){

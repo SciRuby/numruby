@@ -1,12 +1,23 @@
 #include "ruby.h"
 #include "stdio.h"
 #include "cblas.h"
+#include "lapacke.h"
 #include "math.h"
 #include "complex.h"
 
 # define NM_NUM_DTYPES 5
 # define NM_NUM_STYPES 2
 # define NM_NUM_SPARSE_TYPES 4
+
+#define max(a,b) \
+ ({ __typeof__ (a) _a = (a); \
+     __typeof__ (b) _b = (b); \
+   _a > _b ? _a : _b; })
+
+#define min(a,b) \
+ ({ __typeof__ (a) _a = (a); \
+     __typeof__ (b) _b = (b); \
+   _a < _b ? _a : _b; })
 
 typedef enum nm_dtype{
   nm_int,
@@ -199,6 +210,7 @@ DECL_UNARY_RUBY_ACCESSOR(floor)
 DECL_UNARY_RUBY_ACCESSOR(ceil)
 
 VALUE nm_dot(VALUE self, VALUE another);
+void getrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, double* arr2);
 VALUE nm_invert(VALUE self);
 VALUE nm_solve(VALUE self, VALUE rhs);
 VALUE nm_det(VALUE self);

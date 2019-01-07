@@ -3,12 +3,14 @@ require 'test_helper'
 class NMatrix::LapackTest < Minitest::Test
 
   def setup
+    @input = NMatrix.new [2,2], [2, -1, -4, 3]
     @left = NMatrix.new  [2,2],[2.2, 2.2, 4, 5]
     @right = NMatrix.new [2,2],[2, 2, 2, 2]
   end
 
   def test_invert
-
+    result = NMatrix.new [2, 2], [1.5, 0.5, 2.0, 1.0]
+    assert_equal @input.invert, result
   end
 
   def test_solve
@@ -16,7 +18,7 @@ class NMatrix::LapackTest < Minitest::Test
   end
 
   def test_det
-
+    assert_equal @input.det, 2
   end
 
   def test_least_square
