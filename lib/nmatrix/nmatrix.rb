@@ -1,5 +1,12 @@
 class NMatrix
 
+  # Printing the NMatrix object
+  #
+  # @param q
+  # @return [String] inspect
+  #
+  # @example
+  #  TODO
   def pretty_print(q)
     if self.shape.size > 1 and self.shape[1] > 100
       self.inspect.pretty_print(q)
