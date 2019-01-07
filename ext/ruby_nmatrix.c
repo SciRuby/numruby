@@ -332,7 +332,7 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "invert", nm_invert, 0);
   rb_define_method(NMatrix, "solve", nm_solve, 0);
   rb_define_method(NMatrix, "det", nm_det, 0);
-  rb_define_method(NMatrix, "least_square", nm_least_square, 0);
+  rb_define_method(NMatrix, "least_square", nm_least_square, 1);
   rb_define_method(NMatrix, "pinv", nm_pinv, 0);
   rb_define_method(NMatrix, "kronecker_prod", nm_kronecker_prod, 0);
   rb_define_method(NMatrix, "eig", nm_eig, 0);

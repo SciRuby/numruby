@@ -10,7 +10,7 @@ VALUE nm_invert(VALUE self){
 
   result->shape[0] =  matrix->shape[0];
   result->shape[1] =  matrix->shape[1];
-  result->count = result->shape[0] * result->shape[1];
+  result->count = matrix->count;
   double* elements = ALLOC_N(double, result->shape[0] * result->shape[1]);
 
 
@@ -66,8 +66,36 @@ VALUE nm_det(VALUE self){
   return DBL2NUM(prod);
 }
 
-VALUE nm_least_square(VALUE self, VALUE rhs){
-  return Qnil;
+VALUE nm_least_square(VALUE self, VALUE rhs_val){
+  nmatrix* lhs;
+  nmatrix* rhs;
+  Data_Get_Struct(self, nmatrix, lhs);
+  Data_Get_Struct(rhs_val, nmatrix, rhs);
+
+  double* rhs_elements = ALLOC_N(double, rhs->count);
+  memcpy(rhs_elements, rhs->elements, sizeof(double)*rhs->count);
+
+  int m = (int)lhs->shape[0];
+  int n = (int)lhs->shape[1];
+  int nrhs = (int)rhs->shape[1];
+  int lda = (int)lhs->shape[1];
+  int ldb = (int)rhs->shape[1];
+
+  LAPACKE_dgels(LAPACK_ROW_MAJOR,'N',m,n,nrhs,lhs->elements,lda,rhs_elements,ldb);
+
+  nmatrix* result = ALLOC(nmatrix);
+  result->dtype = rhs->dtype;
+  result->stype = rhs->stype;
+  result->ndims = rhs->ndims;
+  result->shape = ALLOC_N(size_t, result->ndims);
+
+  result->shape[0] =  rhs->shape[0];
+  result->shape[1] =  rhs->shape[1];
+  result->count = rhs->count;
+
+  result->elements = rhs_elements;
+
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
 VALUE nm_pinv(VALUE self){
