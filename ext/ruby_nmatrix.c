@@ -143,6 +143,8 @@ typedef struct SPARSE_NMATRIX_STRUCT
 }sparse_nmatrix;
 
 VALUE NumRuby = Qnil;
+VALUE DataTypeError = Qnil;
+VALUE ShapeError = Qnil;
 VALUE NMatrix = Qnil;
 VALUE SparseNMatrix = Qnil;
 
@@ -197,6 +199,25 @@ DECL_UNARY_RUBY_ACCESSOR(floor)
 DECL_UNARY_RUBY_ACCESSOR(ceil)
 
 VALUE nm_dot(VALUE self, VALUE another);
+VALUE nm_invert(VALUE self);
+VALUE nm_solve(VALUE self, VALUE rhs);
+VALUE nm_det(VALUE self);
+VALUE nm_least_square(VALUE self, VALUE rhs);
+VALUE nm_pinv(VALUE self);
+VALUE nm_kronecker_prod(VALUE self);
+VALUE nm_eig(VALUE self);
+VALUE nm_eigh(VALUE self);
+VALUE nm_eigvalsh(VALUE self);
+VALUE nm_lu(VALUE self);
+VALUE nm_lu_factor(VALUE self);
+VALUE nm_lu_solve(VALUE self);
+VALUE nm_svd(VALUE self);
+VALUE nm_svdvals(VALUE self);
+VALUE nm_diagsvd(VALUE self);
+VALUE nm_orth(VALUE self);
+VALUE nm_cholesky(VALUE self);
+VALUE nm_cholesky_solve(VALUE self);
+VALUE nm_qr(VALUE self);
 
 VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self);
 VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self);
@@ -218,15 +239,27 @@ VALUE nm_sparse_get_shape(VALUE self);
 VALUE nm_sparse_to_array(VALUE self);
 VALUE nm_sparse_to_nmatrix(VALUE self);
 
+void get_dense_from_coo(const double* data, const size_t rows,
+                       const size_t cols, const size_t* ia,
+                       const size_t* ja, double* elements);
+void get_dense_from_csc(const double* data, const size_t rows,
+                       const size_t cols, const size_t* ia,
+                       const size_t* ja, double* elements);
 void get_dense_from_csr(const double* data, const size_t rows,
                        const size_t cols, const size_t* ia,
                        const size_t* ja, double* elements);
+void get_dense_from_dia(const double* data, const size_t rows,
+                       const size_t cols, const size_t* offset,
+                       double* elements);
 
 void Init_nmatrix() {
   NumRuby = rb_define_module("NumRuby");
   rb_define_singleton_method(NumRuby, "zeros",  zeros_nmatrix, -1);
   rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
   // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
+
+  DataTypeError = rb_define_class("DataTypeError", rb_eStandardError);
+  ShapeError    = rb_define_class("ShapeError", rb_eStandardError);
 
   SparseNMatrix = rb_define_class("SparseNMatrix", rb_cObject);
   rb_define_alloc_func(SparseNMatrix, nm_sparse_alloc);
@@ -241,6 +274,7 @@ void Init_nmatrix() {
   rb_define_method(SparseNMatrix, "to_nmatrix", nm_sparse_to_nmatrix, 0);
 
   NMatrix = rb_define_class("NMatrix", rb_cObject);
+
 
   rb_define_alloc_func(NMatrix, nm_alloc);
   rb_define_method(NMatrix, "initialize", nmatrix_init, -1);
@@ -283,6 +317,25 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "ceil", nm_ceil, 0);
 
   rb_define_method(NMatrix, "dot", nm_dot, 1);
+  rb_define_method(NMatrix, "invert", nm_invert, 0);
+  rb_define_method(NMatrix, "solve", nm_solve, 0);
+  rb_define_method(NMatrix, "det", nm_det, 0);
+  rb_define_method(NMatrix, "least_square", nm_least_square, 0);
+  rb_define_method(NMatrix, "pinv", nm_pinv, 0);
+  rb_define_method(NMatrix, "kronecker_prod", nm_kronecker_prod, 0);
+  rb_define_method(NMatrix, "eig", nm_eig, 0);
+  rb_define_method(NMatrix, "eigh", nm_eigh, 0);
+  rb_define_method(NMatrix, "eigvalsh", nm_eigvalsh, 0);
+  rb_define_method(NMatrix, "lu", nm_lu, 0);
+  rb_define_method(NMatrix, "lu_factor", nm_lu_factor, 0);
+  rb_define_method(NMatrix, "lu_solve", nm_lu_solve, 0);
+  rb_define_method(NMatrix, "svd", nm_svd, 0);
+  rb_define_method(NMatrix, "svdvals", nm_svdvals, 0);
+  rb_define_method(NMatrix, "diagsvd", nm_diagsvd, 0);
+  rb_define_method(NMatrix, "orth", nm_orth, 0);
+  rb_define_method(NMatrix, "cholesky", nm_cholesky, 0);
+  rb_define_method(NMatrix, "cholesky_solve", nm_cholesky_solve, 0);
+  rb_define_method(NMatrix, "qr", nm_qr, 0);
 
   rb_define_method(NMatrix, "[]", nm_accessor_get, -1);
   rb_define_method(NMatrix, "[]=", nm_accessor_set, -1);
@@ -1106,3 +1159,4 @@ VALUE nm_inspect(VALUE self){
 
 #include "blas.c"
 #include "sparse.c"
+#include "lapack.c"

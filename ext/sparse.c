@@ -344,7 +344,35 @@ VALUE nm_sparse_to_array(VALUE self){
   size_t count = input->count;
   VALUE* array = ALLOC_N(VALUE, input->count);
   switch (input->dtype) {
-    case nm_float64:
+    case coo:
+    {
+      double* elements = ALLOC_N(double, count);
+      get_dense_from_coo(input->coo->elements,
+                        input->shape[0],
+                        input->shape[1],
+                        input->coo->ia,
+                        input->coo->ja,
+                        elements);
+      for (size_t index = 0; index < count; index++){
+        array[index] = DBL2NUM(elements[index]);
+      }
+      break;
+    }
+    case csc:
+    {
+      double* elements = ALLOC_N(double, count);
+      get_dense_from_csc(input->csc->elements,
+                        input->shape[0],
+                        input->shape[1],
+                        input->csc->ia,
+                        input->csc->ja,
+                        elements);
+      for (size_t index = 0; index < count; index++){
+        array[index] = DBL2NUM(elements[index]);
+      }
+      break;
+    }
+    case csr:
     {
       double* elements = ALLOC_N(double, count);
       get_dense_from_csr(input->csr->elements,
@@ -352,6 +380,19 @@ VALUE nm_sparse_to_array(VALUE self){
                         input->shape[1],
                         input->csr->ia,
                         input->csr->ja,
+                        elements);
+      for (size_t index = 0; index < count; index++){
+        array[index] = DBL2NUM(elements[index]);
+      }
+      break;
+    }
+    case dia:
+    {
+      double* elements = ALLOC_N(double, count);
+      get_dense_from_dia(input->diag->elements,
+                        input->shape[0],
+                        input->shape[1],
+                        input->diag->offset,
                         elements);
       for (size_t index = 0; index < count; index++){
         array[index] = DBL2NUM(elements[index]);
@@ -393,6 +434,36 @@ VALUE nm_sparse_to_nmatrix(VALUE self){
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
+void get_dense_from_coo(const double* data, const size_t rows,
+                        const size_t cols, const size_t* ia,
+                        const size_t* ja, double* elements){
+  for(size_t i = 0; i < rows*cols; ++i){ elements[i] = 0; }
+
+  size_t index = 0;
+
+  for(size_t i = 1; i < rows + 1; ++i){
+    for(size_t j = 0; j < ia[i] - ia[i - 1]; ++j){
+      elements[(i-1)*cols + ja[index]] = data[index];
+      index++;
+    }
+  }
+}
+
+void get_dense_from_csc(const double* data, const size_t rows,
+                        const size_t cols, const size_t* ia,
+                        const size_t* ja, double* elements){
+  for(size_t i = 0; i < rows*cols; ++i){ elements[i] = 0; }
+
+  size_t index = 0;
+
+  for(size_t i = 1; i < rows + 1; ++i){
+    for(size_t j = 0; j < ia[i] - ia[i - 1]; ++j){
+      elements[(i-1)*cols + ja[index]] = data[index];
+      index++;
+    }
+  }
+}
+
 void get_dense_from_csr(const double* data, const size_t rows,
                         const size_t cols, const size_t* ia,
                         const size_t* ja, double* elements){
@@ -405,5 +476,17 @@ void get_dense_from_csr(const double* data, const size_t rows,
       elements[(i-1)*cols + ja[index]] = data[index];
       index++;
     }
+  }
+}
+
+void get_dense_from_dia(const double* data, const size_t rows,
+                        const size_t cols, const size_t* offset,
+                        double* elements){
+  for(size_t i = 0; i < rows*cols; ++i){ elements[i] = 0; }
+
+  size_t index = 0;
+
+  for(size_t i = 1; i < rows + 1; ++i){
+
   }
 }
