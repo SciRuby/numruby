@@ -24,6 +24,7 @@ then
 
   sudo apt-get install -y libopenblas-dev
   sudo apt-get install -y liblapack-dev
+  sudo apt-get install -y liblapacke-dev
 fi
 
 if [ "$1" = "script" ]
