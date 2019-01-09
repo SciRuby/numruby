@@ -34,8 +34,39 @@ void getrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, d
   LAPACKE_dgetrf(101,m,n,arr2,lda,ipiv);
 }
 
-VALUE nm_solve(VALUE self, VALUE rhs){
-  return Qnil;
+VALUE nm_solve(VALUE self, VALUE rhs_val){
+  nmatrix* lhs;
+  nmatrix* rhs;
+  Data_Get_Struct(self, nmatrix, lhs);
+  Data_Get_Struct(rhs_val, nmatrix, rhs);
+
+  double* lhs_elements = ALLOC_N(double, lhs->count);
+  memcpy(lhs_elements, lhs->elements, sizeof(double)*lhs->count);
+  double* rhs_elements = ALLOC_N(double, rhs->count);
+  memcpy(rhs_elements, rhs->elements, sizeof(double)*rhs->count);
+
+  int n = (int)lhs->shape[1];
+  //assert square matrix
+  int nrhs = (int)rhs->shape[1];
+  int lda = (int)lhs->shape[1];
+  int ldb = (int)rhs->shape[1];
+  int* ipiv = ALLOC_N(int, max(1,n));
+
+  LAPACKE_dgesv(LAPACK_ROW_MAJOR, n, nrhs, lhs_elements,lda, ipiv, rhs_elements,ldb);
+
+  nmatrix* result = ALLOC(nmatrix);
+  result->dtype = rhs->dtype;
+  result->stype = rhs->stype;
+  result->ndims = rhs->ndims;
+  result->shape = ALLOC_N(size_t, result->ndims);
+
+  result->shape[0] =  rhs->shape[0];
+  result->shape[1] =  rhs->shape[1];
+  result->count = rhs->count;
+
+  result->elements = rhs_elements;
+
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
 VALUE nm_det(VALUE self){
@@ -72,6 +103,9 @@ VALUE nm_least_square(VALUE self, VALUE rhs_val){
   Data_Get_Struct(self, nmatrix, lhs);
   Data_Get_Struct(rhs_val, nmatrix, rhs);
 
+  double* lhs_elements = ALLOC_N(double, lhs->count);
+  memcpy(lhs_elements, lhs->elements, sizeof(double)*lhs->count);
+
   double* rhs_elements = ALLOC_N(double, rhs->count);
   memcpy(rhs_elements, rhs->elements, sizeof(double)*rhs->count);
 
@@ -81,7 +115,7 @@ VALUE nm_least_square(VALUE self, VALUE rhs_val){
   int lda = (int)lhs->shape[1];
   int ldb = (int)rhs->shape[1];
 
-  LAPACKE_dgels(LAPACK_ROW_MAJOR,'N',m,n,nrhs,lhs->elements,lda,rhs_elements,ldb);
+  LAPACKE_dgels(LAPACK_ROW_MAJOR,'N',m,n,nrhs,lhs_elements,lda,rhs_elements,ldb);
 
   nmatrix* result = ALLOC(nmatrix);
   result->dtype = rhs->dtype;
@@ -128,7 +162,7 @@ VALUE nm_lu_factor(VALUE self){
   return Qnil;
 }
 
-VALUE nm_lu_solve(VALUE self){
+VALUE nm_lu_solve(VALUE self, VALUE rhs_val){
   return Qnil;
 }
 

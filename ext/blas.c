@@ -56,3 +56,44 @@ VALUE nm_dot(VALUE self, VALUE another){
 
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
+
+VALUE nm_norm2(VALUE self){
+  nmatrix* matrix;
+  Data_Get_Struct(self, nmatrix, matrix);
+  //check mat is vector
+  VALUE val = Qnil;
+
+  switch (matrix->dtype) {
+    case nm_int:
+    {
+      ///* Not supported message and casting to double */
+      break;
+    }
+    case nm_float32:
+    {
+      float norm = cblas_snrm2(matrix->count, matrix->elements, 1);
+      val = DBL2NUM(norm);
+      break;
+    }
+    case nm_float64:
+    {
+      double norm = cblas_dnrm2(matrix->count, matrix->elements, 1);
+      val = DBL2NUM(norm);
+      break;
+    }
+    case nm_complex32:
+    {
+      double norm = cblas_dznrm2(matrix->count, matrix->elements, 1);
+      val = DBL2NUM(norm);
+      break;
+    }
+    case nm_complex64:
+    {
+      double norm = cblas_dznrm2(matrix->count, matrix->elements, 1);
+      val = DBL2NUM(norm);
+      break;
+    }
+  }
+
+  return val;
+}

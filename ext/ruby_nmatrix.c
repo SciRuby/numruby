@@ -210,11 +210,12 @@ DECL_UNARY_RUBY_ACCESSOR(floor)
 DECL_UNARY_RUBY_ACCESSOR(ceil)
 
 VALUE nm_dot(VALUE self, VALUE another);
+VALUE nm_norm2(VALUE self);
 void getrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, double* arr2);
 VALUE nm_invert(VALUE self);
-VALUE nm_solve(VALUE self, VALUE rhs);
+VALUE nm_solve(VALUE self, VALUE rhs_val);
 VALUE nm_det(VALUE self);
-VALUE nm_least_square(VALUE self, VALUE rhs);
+VALUE nm_least_square(VALUE self, VALUE rhs_val);
 VALUE nm_pinv(VALUE self);
 VALUE nm_kronecker_prod(VALUE self);
 VALUE nm_eig(VALUE self);
@@ -222,7 +223,7 @@ VALUE nm_eigh(VALUE self);
 VALUE nm_eigvalsh(VALUE self);
 VALUE nm_lu(VALUE self);
 VALUE nm_lu_factor(VALUE self);
-VALUE nm_lu_solve(VALUE self);
+VALUE nm_lu_solve(VALUE self, VALUE rhs_val);
 VALUE nm_svd(VALUE self);
 VALUE nm_svdvals(VALUE self);
 VALUE nm_diagsvd(VALUE self);
@@ -329,8 +330,9 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "ceil", nm_ceil, 0);
 
   rb_define_method(NMatrix, "dot", nm_dot, 1);
+  rb_define_method(NMatrix, "norm", nm_norm2, 0);
   rb_define_method(NMatrix, "invert", nm_invert, 0);
-  rb_define_method(NMatrix, "solve", nm_solve, 0);
+  rb_define_method(NMatrix, "solve", nm_solve, 1);
   rb_define_method(NMatrix, "det", nm_det, 0);
   rb_define_method(NMatrix, "least_square", nm_least_square, 1);
   rb_define_method(NMatrix, "pinv", nm_pinv, 0);
@@ -340,7 +342,7 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "eigvalsh", nm_eigvalsh, 0);
   rb_define_method(NMatrix, "lu", nm_lu, 0);
   rb_define_method(NMatrix, "lu_factor", nm_lu_factor, 0);
-  rb_define_method(NMatrix, "lu_solve", nm_lu_solve, 0);
+  rb_define_method(NMatrix, "lu_solve", nm_lu_solve, 1);
   rb_define_method(NMatrix, "svd", nm_svd, 0);
   rb_define_method(NMatrix, "svdvals", nm_svdvals, 0);
   rb_define_method(NMatrix, "diagsvd", nm_diagsvd, 0);
