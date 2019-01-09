@@ -20,7 +20,6 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.add_development_dependency 'bundler', '>=1.6'
   gem.add_development_dependency 'rubocop', '>= 0.49.0'
-  gem.add_development_dependency 'bundler'
   gem.add_development_dependency 'json', '>= 1.5.5'
   gem.add_development_dependency 'pry', '~>0.10'
   gem.add_development_dependency 'rake', '~>10.3'
