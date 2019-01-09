@@ -15,10 +15,16 @@ then
       ;;
   esac
 
-  gem install --no-document bundler
+  if [ $TRAVIS_RUBY_VERSION == '2.2.4' ] || [ $TRAVIS_RUBY_VERSION == '2.1.8' ]
+  then
+    gem install --no-document bundler -v '~> 1.6';
+  else
+    gem install --no-document bundler;
+  fi
 
   sudo apt-get install -y libopenblas-dev
   sudo apt-get install -y liblapack-dev
+  sudo apt-get install -y liblapacke-dev
 fi
 
 if [ "$1" = "script" ]
