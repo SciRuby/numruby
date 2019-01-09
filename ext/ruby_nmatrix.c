@@ -243,6 +243,7 @@ VALUE nm_inspect(VALUE self);
 
 VALUE nm_sparse_alloc(VALUE klass);
 void  nm_sparse_free(csr_nmatrix* mat);
+
 VALUE coo_sparse_nmatrix_init(int argc, VALUE* argv);
 VALUE csr_sparse_nmatrix_init(int argc, VALUE* argv);
 VALUE csc_sparse_nmatrix_init(int argc, VALUE* argv);
@@ -250,6 +251,12 @@ VALUE dia_sparse_nmatrix_init(int argc, VALUE* argv);
 VALUE nm_sparse_get_dtype(VALUE self);
 VALUE nm_sparse_get_shape(VALUE self);
 VALUE nm_sparse_to_array(VALUE self);
+
+/*
+ * Sparse matrix to NMatrix
+ *
+ * @return NMatrix
+*/
 VALUE nm_sparse_to_nmatrix(VALUE self);
 
 void get_dense_from_coo(const double* data, const size_t rows,

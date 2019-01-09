@@ -35,6 +35,13 @@ rake pry
 ruby benchmark/bench.rb
 ```
 
+
+## Documentation
+
+- http://www.rubydoc.info/github/prasunanand/nmatrix_reloaded
+
+[Yard](https://www.rubydoc.info/gems/yard/) is used for documenting class and methods following yard [tags](https://www.rubydoc.info/gems/yard/file/docs/Tags.md). To generate the static documentation in doc folder run `yard doc`. To serve it in localhost run `yard server`.
+
 # LICENSE
 
 This software is distributed under the [BSD 3-Clause License](LICENSE).
