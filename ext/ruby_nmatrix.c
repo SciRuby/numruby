@@ -161,6 +161,7 @@ VALUE SparseNMatrix = Qnil;
 
 void Init_nmatrix();
 
+VALUE average_nmatrix(int argc, VALUE* argv);
 VALUE constant_nmatrix(int argc, VALUE* argv, double constant);
 VALUE zeros_nmatrix(int argc, VALUE* argv);
 VALUE ones_nmatrix(int argc, VALUE* argv);
@@ -274,6 +275,7 @@ void get_dense_from_dia(const double* data, const size_t rows,
 
 void Init_nmatrix() {
   NumRuby = rb_define_module("NumRuby");
+  rb_define_singleton_method(NumRuby, "average",  average_nmatrix, -1);
   rb_define_singleton_method(NumRuby, "zeros",  zeros_nmatrix, -1);
   rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
   // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
@@ -1179,5 +1181,6 @@ VALUE nm_inspect(VALUE self){
 
 
 #include "blas.c"
-#include "sparse.c"
 #include "lapack.c"
+#include "sparse.c"
+#include "statistics.c"
