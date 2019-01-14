@@ -10,7 +10,12 @@ class NMatrix::BlasTest < Minitest::Test
   def test_dot
     result = NMatrix.new  [2,2], [8.8, 8.8, 18.0, 18.0]
     answer = @left.dot @right
-    assert_equal answer.elements, result.elements
+    assert_equal answer, result
+  end
+
+  def test_norm
+    vector = NMatrix.new  [2,1], [3, 4]
+    assert_equal vector.norm, 5
   end
 
 end

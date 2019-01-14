@@ -14,7 +14,9 @@ class NMatrix::LapackTest < Minitest::Test
   end
 
   def test_solve
-
+    rhs = NMatrix.new [2, 1], [4, 7]
+    solution = NMatrix.new [2,1], [9.5, 15]
+    assert_equal  @input.solve(rhs), solution
   end
 
   def test_det
@@ -22,7 +24,9 @@ class NMatrix::LapackTest < Minitest::Test
   end
 
   def test_least_square
-
+    rhs = NMatrix.new [2, 1], [4, 7]
+    solution = NMatrix.new [2,1], [9.5, 15]
+    assert_equal  @input.least_square(rhs), solution
   end
 
   def test_pinv
@@ -46,7 +50,6 @@ class NMatrix::LapackTest < Minitest::Test
   end
 
   def test_lu
-
   end
 
   def test_lu_factor
