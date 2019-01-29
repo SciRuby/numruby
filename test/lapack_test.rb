@@ -7,6 +7,7 @@ class NMatrix::LapackTest < Minitest::Test
     @left = NMatrix.new  [2,2],[2.2, 2.2, 4, 5]
     @right = NMatrix.new [2,2],[2, 2, 2, 2]
     @dtypes = [:nm_float64]
+    @dtypes2 = [:nm_float64, :nm_float32]
   end
 
   def test_invert
@@ -28,17 +29,17 @@ class NMatrix::LapackTest < Minitest::Test
 
   def test_det
     @dtypes.each do |dtype|
-      input = NMatrix.new [2,2], [2, -1, -4, 3], dtype
+      input = NMatrix.new [2,2], [2, -1, -4, 3]
       assert_equal input.det, 2
     end
   end
 
   def test_least_square
-    @dtypes.each do |dtype|
-      input = NMatrix.new [2,2], [2, -1, -4, 3], dtype
-      rhs = NMatrix.new [2, 1], [4, 7], dtype
-      solution = NMatrix.new [2,1], [9.5, 15], dtype
-      assert_equal  input.least_square(rhs), solution
+    @dtypes2.each do |dtype|
+      input = NMatrix.new [2,2], [2, -1, -4, 3]
+      rhs = NMatrix.new [2, 1], [4, 7]
+      solution = NMatrix.new [2,1], [9.5, 15]
+      assert_equal input.least_square(rhs), solution
     end
   end
 
