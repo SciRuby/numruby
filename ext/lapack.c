@@ -103,20 +103,12 @@ VALUE nm_least_square(VALUE self, VALUE rhs_val){
   Data_Get_Struct(self, nmatrix, lhs);
   Data_Get_Struct(rhs_val, nmatrix, rhs);
 
-  double* lhs_elements = ALLOC_N(double, lhs->count);
-  memcpy(lhs_elements, lhs->elements, sizeof(double)*lhs->count);
-
-  double* rhs_elements = ALLOC_N(double, rhs->count);
-  memcpy(rhs_elements, rhs->elements, sizeof(double)*rhs->count);
-
   int m = (int)lhs->shape[0];
   int n = (int)lhs->shape[1];
   int nrhs = (int)rhs->shape[1];
   int lda = (int)lhs->shape[1];
   int ldb = (int)rhs->shape[1];
-
-  LAPACKE_dgels(LAPACK_ROW_MAJOR,'N',m,n,nrhs,lhs_elements,lda,rhs_elements,ldb);
-
+  
   nmatrix* result = ALLOC(nmatrix);
   result->dtype = rhs->dtype;
   result->stype = rhs->stype;
@@ -127,7 +119,38 @@ VALUE nm_least_square(VALUE self, VALUE rhs_val){
   result->shape[1] =  rhs->shape[1];
   result->count = rhs->count;
 
-  result->elements = rhs_elements;
+  // result->elements = rhs_elements;
+  
+  
+  switch (lhs->dtype) {
+    case nm_float32:
+    {
+      
+      float* lhs_elements = ALLOC_N(float, lhs->count);
+      memcpy(lhs_elements, lhs->elements, sizeof(float)*lhs->count);
+    
+      float* rhs_elements = ALLOC_N(float, rhs->count);
+      memcpy(rhs_elements, rhs->elements, sizeof(float)*rhs->count);
+      LAPACKE_sgels(LAPACK_ROW_MAJOR,'N',m,n,nrhs,lhs_elements,lda,rhs_elements,ldb);
+      result->elements = rhs_elements;
+      break;
+    }
+    case nm_float64:
+    {
+      
+      double* lhs_elements = ALLOC_N(double, lhs->count);
+      memcpy(lhs_elements, lhs->elements, sizeof(double)*lhs->count);
+    
+      double* rhs_elements = ALLOC_N(double, rhs->count);
+      memcpy(rhs_elements, rhs->elements, sizeof(double)*rhs->count);
+      
+      LAPACKE_dgels(LAPACK_ROW_MAJOR,'N',m,n,nrhs,lhs_elements,lda,rhs_elements,ldb);
+      result->elements = rhs_elements;
+      break;
+    }
+  }
+
+  //LAPACKE_dgels(LAPACK_ROW_MAJOR,'N',m,n,nrhs,lhs_elements,lda,rhs_elements,ldb);
 
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }

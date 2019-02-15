@@ -628,15 +628,33 @@ VALUE nm_eqeq(VALUE self, VALUE another){
   nmatrix* right;
   Data_Get_Struct(self, nmatrix, left);
   Data_Get_Struct(another, nmatrix, right);
-
-  double* left_elements = (double*)left->elements;
-  double* right_elements = (double*)right->elements;
-
-  for(size_t index = 0; index < left->count; index++){
-    if(fabs(left_elements[index] - right_elements[index]) > 1e-3){
-      return Qfalse;
+  
+  switch (right->dtype) {
+    case nm_float64: {
+      double* left_elements = (double*)left->elements;
+      double* right_elements = (double*)right->elements;
+    
+      for(size_t index = 0; index < left->count; index++){
+        if(fabs(left_elements[index] - right_elements[index]) > 1e-3){
+          return Qfalse;
+        }
+      }
+      break;
+    }
+    
+    case nm_float32: {
+      float* left_elements = (float*)left->elements;
+      float* right_elements = (float*)right->elements;
+    
+      for(size_t index = 0; index < left->count; index++){
+        if(fabs(left_elements[index] - right_elements[index]) > 1e-3){
+          return Qfalse;
+        }
+      }
+      break;
     }
   }
+      
 
   return Qtrue;
 }

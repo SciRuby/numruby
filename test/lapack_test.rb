@@ -1,4 +1,4 @@
-require 'test_helper'
+require_relative 'test_helper'
 
 class NMatrix::LapackTest < Minitest::Test
 
@@ -6,27 +6,41 @@ class NMatrix::LapackTest < Minitest::Test
     @input = NMatrix.new [2,2], [2, -1, -4, 3]
     @left = NMatrix.new  [2,2],[2.2, 2.2, 4, 5]
     @right = NMatrix.new [2,2],[2, 2, 2, 2]
+    @dtypes = [:nm_float64]
+    @dtypes2 = [:nm_float64, :nm_float32]
   end
 
   def test_invert
-    result = NMatrix.new [2, 2], [1.5, 0.5, 2.0, 1.0]
-    assert_equal @input.invert, result
+    @dtypes.each do |dtype|
+      input = NMatrix.new [2,2], [2, -1, -4, 3], dtype
+      result = NMatrix.new [2, 2], [1.5, 0.5, 2.0, 1.0], dtype
+      assert_equal input.invert, result
+    end
   end
 
   def test_solve
-    rhs = NMatrix.new [2, 1], [4, 7]
-    solution = NMatrix.new [2,1], [9.5, 15]
-    assert_equal  @input.solve(rhs), solution
+    @dtypes.each do |dtype|
+      input = NMatrix.new [2,2], [2, -1, -4, 3], dtype
+      rhs = NMatrix.new [2, 1], [4, 7], dtype
+      solution = NMatrix.new [2,1], [9.5, 15], dtype
+      assert_equal  input.solve(rhs), solution
+    end
   end
 
   def test_det
-    assert_equal @input.det, 2
+    @dtypes.each do |dtype|
+      input = NMatrix.new [2,2], [2, -1, -4, 3]
+      assert_equal input.det, 2
+    end
   end
 
   def test_least_square
-    rhs = NMatrix.new [2, 1], [4, 7]
-    solution = NMatrix.new [2,1], [9.5, 15]
-    assert_equal  @input.least_square(rhs), solution
+    @dtypes2.each do |dtype|
+      input = NMatrix.new [2,2], [2, -1, -4, 3]
+      rhs = NMatrix.new [2, 1], [4, 7]
+      solution = NMatrix.new [2,1], [9.5, 15]
+      assert_equal input.least_square(rhs), solution
+    end
   end
 
   def test_pinv
