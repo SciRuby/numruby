@@ -34,6 +34,15 @@ VALUE coo_sparse_nmatrix_init(int argc, VALUE* argv){
     }
 
     switch(mat->dtype){
+      case nm_bool:
+      {
+        bool* elements = ALLOC_N(bool, (size_t)RARRAY_LEN(argv[1]));
+        for (size_t index = 0; index < (size_t)RARRAY_LEN(argv[1]); index++) {
+          elements[index] = (bool)NUM2DBL(RARRAY_AREF(argv[1], index));
+        }
+        mat->coo->elements = elements;
+        break;
+      }
       case nm_int:
       {
         int* elements = ALLOC_N(int, (size_t)RARRAY_LEN(argv[1]));
@@ -112,6 +121,15 @@ VALUE csr_sparse_nmatrix_init(int argc, VALUE* argv){
     }
 
     switch(mat->dtype){
+      case nm_bool:
+      {
+        bool* elements = ALLOC_N(bool, (size_t)RARRAY_LEN(argv[1]));
+        for (size_t index = 0; index < (size_t)RARRAY_LEN(argv[1]); index++) {
+          elements[index] = (bool)NUM2DBL(RARRAY_AREF(argv[1], index));
+        }
+        mat->csr->elements = elements;
+        break;
+      }
       case nm_int:
       {
         int* elements = ALLOC_N(int, (size_t)RARRAY_LEN(argv[1]));
@@ -190,6 +208,15 @@ VALUE csc_sparse_nmatrix_init(int argc, VALUE* argv){
     }
 
     switch(mat->dtype){
+      case nm_bool:
+      {
+        bool* elements = ALLOC_N(bool, (size_t)RARRAY_LEN(argv[1]));
+        for (size_t index = 0; index < (size_t)RARRAY_LEN(argv[1]); index++) {
+          elements[index] = (bool)NUM2DBL(RARRAY_AREF(argv[1], index));
+        }
+        mat->csc->elements = elements;
+        break;
+      }
       case nm_int:
       {
         int* elements = ALLOC_N(int, (size_t)RARRAY_LEN(argv[1]));

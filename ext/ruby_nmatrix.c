@@ -4,8 +4,9 @@
 #include "lapacke.h"
 #include "math.h"
 #include "complex.h"
+#include "stdbool.h"
 
-# define NM_NUM_DTYPES 5
+# define NM_NUM_DTYPES 6
 # define NM_NUM_STYPES 2
 # define NM_NUM_SPARSE_TYPES 4
 
@@ -20,6 +21,7 @@
    _a < _b ? _a : _b; })
 
 typedef enum nm_dtype{
+  nm_bool,
   nm_int,
   nm_float32,
   nm_float64,
@@ -28,6 +30,7 @@ typedef enum nm_dtype{
 }nm_dtype;
 
 const char* const DTYPE_NAMES[NM_NUM_DTYPES] = {
+  "nm_bool",
   "nm_int",
   "nm_float32",
   "nm_float64",
@@ -423,6 +426,15 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
       case nm_dense:
       {
         switch(mat->dtype) {
+          case nm_bool:
+          {
+            bool* elements = ALLOC_N(bool, mat->count);
+            for (size_t index = 0; index < mat->count; index++) {
+              elements[index] = (bool)RTEST(RARRAY_AREF(argv[1], index));
+            }
+            mat->elements = elements;
+            break;
+          }
           case nm_int:
           {
             int* elements = ALLOC_N(int, mat->count);
@@ -532,6 +544,14 @@ VALUE nm_get_elements(VALUE self){
     {
       array = ALLOC_N(VALUE, input->count);
       switch (input->dtype) {
+        case nm_bool:
+        {
+          bool* elements = (bool*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            array[index] = elements[index] ? Qtrue : Qfalse;
+          }
+          break;
+        }
         case nm_int:
         {
           int* elements = (int*)input->elements;
@@ -675,6 +695,27 @@ VALUE nm_add(VALUE self, VALUE another){
   }
 
   switch (result->dtype) {
+    case nm_bool:
+    {
+      bool* left_elements = (bool*)left->elements;
+      bool* result_elements = ALLOC_N(bool, result->count);
+      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
+        for(size_t index = 0; index < left->count; index++){
+          result_elements[index] = left_elements[index] + NUM2DBL(another);
+        }
+      }
+      else{
+        nmatrix* right;
+        Data_Get_Struct(another, nmatrix, right);
+        bool* right_elements = (bool*)right->elements;
+
+        for(size_t index = 0; index < left->count; index++){
+          result_elements[index] = left_elements[index] + right_elements[index];
+        }
+      }
+      result->elements = result_elements;
+      break;
+    }
     case nm_int:
     {
       int* left_elements = (int*)left->elements;
@@ -801,6 +842,27 @@ VALUE nm_##name(VALUE self, VALUE another){        \
   }                                                                  \
                                                                      \
   switch (result->dtype) {                                                       \
+    case nm_bool:                                                                 \
+    {                                                                            \
+      bool* left_elements = (bool*)left->elements;                           \
+      bool* result_elements = ALLOC_N(bool, result->count);                  \
+      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+        for(size_t index = 0; index < left->count; index++){                     \
+          result_elements[index] = left_elements[index] + NUM2DBL(another);      \
+        }                                                                        \
+      }                                                                          \
+      else{                                                                      \
+        nmatrix* right;                                                          \
+        Data_Get_Struct(another, nmatrix, right);                                \
+        bool* right_elements = (bool*)right->elements;                       \
+                                                                                 \
+        for(size_t index = 0; index < left->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
+        }                                                                        \
+      }                                                                          \
+      result->elements = result_elements;                                        \
+      break;                                                                     \
+    }                                                                            \
     case nm_int:                                                                 \
     {                                                                            \
       int* left_elements = (int*)left->elements;                           \
@@ -930,6 +992,16 @@ VALUE nm_sin(VALUE self){
   }
 
   switch(result->dtype){
+    case nm_bool:
+    {
+      bool* input_elements = (bool*)input->elements;
+      bool* result_elements = ALLOC_N(bool, result->count);
+      for(size_t index = 0; index < input->count; index++){
+        result_elements[index] = sin(input_elements[index]);
+      }
+      result->elements = result_elements;
+      break;
+    }
     case nm_int:
     {
       int* input_elements = (int*)input->elements;
@@ -1001,6 +1073,16 @@ static VALUE nm_##name(VALUE self) {                               \
     result->shape[index] = input->shape[index];                    \
   }                                                                \
   switch(result->dtype){                                           \
+    case nm_bool:                                                   \
+    {                                                              \
+      bool* input_elements = (bool*)input->elements;                 \
+      bool* result_elements = ALLOC_N(bool, result->count);          \
+      for(size_t index = 0; index < input->count; index++){        \
+        result_elements[index] = oper(input_elements[index]);      \
+      }                                                            \
+      result->elements = result_elements;                          \
+      break;                                                       \
+    }                                                              \
     case nm_int:                                                   \
     {                                                              \
       int* input_elements = (int*)input->elements;                 \
@@ -1086,6 +1168,16 @@ static VALUE nm_##name(VALUE self) {                               \
     result->shape[index] = input->shape[index];                    \
   }                                                                \
   switch(result->dtype){                                           \
+    case nm_bool:                                                   \
+    {                                                              \
+      bool* input_elements = (bool*)input->elements;                 \
+      bool* result_elements = ALLOC_N(bool, result->count);          \
+      for(size_t index = 0; index < input->count; index++){        \
+        result_elements[index] = oper(input_elements[index]);      \
+      }                                                            \
+      result->elements = result_elements;                          \
+      break;                                                       \
+    }                                                              \
     case nm_int:                                                   \
     {                                                              \
       int* input_elements = (int*)input->elements;                 \
