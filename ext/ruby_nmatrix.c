@@ -695,27 +695,6 @@ VALUE nm_add(VALUE self, VALUE another){
   }
 
   switch (result->dtype) {
-    case nm_bool:
-    {
-      bool* left_elements = (bool*)left->elements;
-      bool* result_elements = ALLOC_N(bool, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        bool* right_elements = (bool*)right->elements;
-
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
-        }
-      }
-      result->elements = result_elements;
-      break;
-    }
     case nm_int:
     {
       int* left_elements = (int*)left->elements;
