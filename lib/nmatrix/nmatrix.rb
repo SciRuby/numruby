@@ -48,6 +48,28 @@ class NMatrix
     end
   end
 
+  def to_a(dimen=nil)
+    if self.dim == 2
+
+      return self.to_flat_a if self.shape[0] == 1
+
+      ary = []
+
+      for row_index in 0..self.shape[0]-1 do
+            i = (row_index * self.shape[1])
+            current_row = Array.new
+            self.shape[1].times do
+              current_row.push(elements[i])
+              i += 1
+            end
+            ary << current_row
+          end
+      ary
+    else
+      to_a_rec(0)
+    end
+  end
+
   def inspect #:nodoc:
     original_inspect = super()
     original_inspect = original_inspect[0...original_inspect.size-1]
