@@ -19,6 +19,7 @@
      __typeof__ (b) _b = (b); \
    _a < _b ? _a : _b; })
 
+// data types
 typedef enum nm_dtype{
   nm_int,
   nm_float32,
@@ -35,6 +36,7 @@ const char* const DTYPE_NAMES[NM_NUM_DTYPES] = {
   "nm_complex64"
 };
 
+// storage types
 typedef enum nm_stype{
   nm_dense,
   nm_sparse
@@ -274,31 +276,56 @@ void get_dense_from_dia(const double* data, const size_t rows,
                        double* elements);
 
 void Init_nmatrix() {
+
+  ///////////////////////
+  // Class Definitions //
+  ///////////////////////
+
   NumRuby = rb_define_module("NumRuby");
   rb_define_singleton_method(NumRuby, "average",  average_nmatrix, -1);
   rb_define_singleton_method(NumRuby, "zeros",  zeros_nmatrix, -1);
   rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
   // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
 
+  /*
+   * Exception raised when there's a problem with data.
+   */
   DataTypeError = rb_define_class("DataTypeError", rb_eStandardError);
-  ShapeError    = rb_define_class("ShapeError", rb_eStandardError);
+  
+  /*
+   * Exception raised when the matrix shape is not appropriate for a given operation.
+   */
+  ShapeError = rb_define_class("ShapeError", rb_eStandardError);
 
+  /*
+   * SparseNMatrix Class definition
+   */
   SparseNMatrix = rb_define_class("SparseNMatrix", rb_cObject);
+  
+  // Class method
   rb_define_alloc_func(SparseNMatrix, nm_sparse_alloc);
+  
+  // Singleton Methods
   rb_define_singleton_method(SparseNMatrix, "coo", coo_sparse_nmatrix_init, -1);
   rb_define_singleton_method(SparseNMatrix, "csr", csr_sparse_nmatrix_init, -1);
   rb_define_singleton_method(SparseNMatrix, "csc", csc_sparse_nmatrix_init, -1);
   rb_define_singleton_method(SparseNMatrix, "dia", dia_sparse_nmatrix_init, -1);
 
+  // Instance Methods
   rb_define_method(SparseNMatrix, "dtype",      nm_sparse_get_dtype, 0);
   rb_define_method(SparseNMatrix, "shape",      nm_sparse_get_shape, 0);
   rb_define_method(SparseNMatrix, "to_array",   nm_sparse_to_array, 0);
   rb_define_method(SparseNMatrix, "to_nmatrix", nm_sparse_to_nmatrix, 0);
 
+  /*
+   * NMatrix Class definition
+   */
   NMatrix = rb_define_class("NMatrix", rb_cObject);
 
-
+  // Class method
   rb_define_alloc_func(NMatrix, nm_alloc);
+
+  // Instance Methods
   rb_define_method(NMatrix, "initialize", nmatrix_init, -1);
   rb_define_method(NMatrix, "dim",      nm_get_dim, -1);
   rb_define_method(NMatrix, "shape",    nm_get_shape, 0);
@@ -367,14 +394,20 @@ void Init_nmatrix() {
   // rb_define_method(NMatrix, "inspect", nm_inspect, 0);
 }
 
+// Return a matrix with all elements value equal to 0
 VALUE zeros_nmatrix(int argc, VALUE* argv){
   return constant_nmatrix(argc, argv, 0);
 }
 
+// Return a matrix with all elements value equal to 1
 VALUE ones_nmatrix(int argc, VALUE* argv){
   return constant_nmatrix(argc, argv, 1);
 }
 
+/*
+ * Helper function used by 'zeros_nmatrix' and 'ones_nmatrix'
+ * to return a matrix with all elements equal to constant
+ */
 VALUE constant_nmatrix(int argc, VALUE* argv, double constant){
   nmatrix* mat = ALLOC(nmatrix);
   mat->stype = nm_dense;
@@ -397,6 +430,26 @@ VALUE constant_nmatrix(int argc, VALUE* argv, double constant){
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, mat);
 }
 
+/*
+ * Creates a new NMatrix object
+ *
+ * call-seq:
+ *     new shape, initial_array -> NMatrix
+ *     new shape, initial_array, dtype -> NMatrix
+ *     new shape, initial_array, dtype, stype -> NMatrix
+ *     .... TODO: remaining call-sequences
+ *
+ *     Default value of dtype -> nm_float64
+ *     Default value of stype -> nm_dense
+ *     
+ *     shape and initial_array are mendatory.
+ *
+ *     shape is an array with length equal to number of dimensions. Each value of array is a positive integer
+ *     and specifies length of each dimension.
+ *
+ *     initial_array is an array with length equal to number of elements in the matrix
+ *     and specifies initial values of matrix elements. 
+ */
 VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
   nmatrix* mat;
   Data_Get_Struct(self, nmatrix, mat);
@@ -418,7 +471,7 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
       mat->dtype = (argc > 5) ? nm_dtype_from_rbsymbol(argv[4]) : nm_float64;
     }
 
-
+    // Convert and fill the elements values into the NMatrix object
     switch(mat->stype){
       case nm_dense:
       {
@@ -505,6 +558,9 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
   return self;
 }
 
+/*
+ * Allocator.
+ */
 VALUE nm_alloc(VALUE klass)
 {
   nmatrix* mat = ALLOC(nmatrix);
@@ -512,14 +568,19 @@ VALUE nm_alloc(VALUE klass)
   return Data_Wrap_Struct(klass, NULL, nm_free, mat);
 }
 
+/*
+ * Destructor.
+ */
 void nm_free(nmatrix* mat){
   xfree(mat);
 }
 
+// Returns number of dimensions of matrix
 VALUE nm_get_dim(VALUE self){
   return INT2NUM(2);
 }
 
+// Returns a flat list(one dimensional array) of elements values of matrix
 VALUE nm_get_elements(VALUE self){
   nmatrix* input;
   Data_Get_Struct(self, nmatrix, input);
@@ -596,6 +657,12 @@ VALUE nm_get_elements(VALUE self){
   return rb_ary_new4(count, array);
 }
 
+/*
+ * call-seq:
+ *     shape -> Array
+ *
+ * Get the shape of a matrix, e.g., [2,2]
+ */
 VALUE nm_get_shape(VALUE self){
   nmatrix* input;
 
@@ -609,6 +676,13 @@ VALUE nm_get_shape(VALUE self){
   return rb_ary_new4(input->ndims, array);
 }
 
+/*
+ * call-seq:
+ *     dtype -> Symbol
+ *
+ * Get the data type (dtype) of a matrix, e.g., :nm_bool, :nm_int,
+ * :nm_float32, :nm_float64, :nm_complex32, :nm_complex64
+ */
 VALUE nm_get_dtype(VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
@@ -616,6 +690,12 @@ VALUE nm_get_dtype(VALUE self){
   return rb_str_new_cstr(DTYPE_NAMES[nmat->dtype]);
 }
 
+/*
+ * call-seq:
+ *     stype -> Symbol
+ *
+ * Get the storage type (stype) of a matrix, e.g., :nm_sparse, :nm_dense
+ */
 VALUE nm_get_stype(VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
@@ -623,6 +703,11 @@ VALUE nm_get_stype(VALUE self){
   return rb_str_new_cstr(STYPE_NAMES[nmat->stype]);
 }
 
+/*
+ * Equality operator. Returns a single true or false value indicating whether
+ * the matrices are equivalent.
+ *
+ */
 VALUE nm_eqeq(VALUE self, VALUE another){
   nmatrix* left;
   nmatrix* right;
@@ -659,6 +744,11 @@ VALUE nm_eqeq(VALUE self, VALUE another){
   return Qtrue;
 }
 
+/*
+ * Addition operator. Returns a matrix which is the elementwise addition
+ * of the two operand matrices.
+ *
+ */
 VALUE nm_add(VALUE self, VALUE another){
   nmatrix* left;
   Data_Get_Struct(self, nmatrix, left);
@@ -1138,6 +1228,9 @@ DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(tgamma, tgamma)
 DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(floor, floor)
 DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(ceil, ceil)
 
+/*
+ * Get the element of a matrix at the given index
+ */
 VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
@@ -1149,6 +1242,9 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
   return DBL2NUM(val);
 }
 
+/*
+ * Change the value of element at given index of a matrix to the given value
+ */
 VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
@@ -1162,6 +1258,7 @@ VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self){
   return argv[2];
 }
 
+// Return rank of the matrix
 VALUE nm_get_rank(VALUE self, VALUE dim_val){
   nmatrix* input;
   Data_Get_Struct(self, nmatrix, input);
@@ -1183,9 +1280,7 @@ VALUE nm_get_rank(VALUE self, VALUE dim_val){
   double* result_elements = ALLOC_N(double, input->shape[1]);
 
   for (size_t i = 0; i < input->shape[1]; ++i)
-  {
     result_elements[i] = input_elements[input->shape[1]*dim + i];
-  }
   result->elements = result_elements;
 
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
