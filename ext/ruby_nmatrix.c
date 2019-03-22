@@ -699,9 +699,9 @@ VALUE nm_add(VALUE self, VALUE another){
     {
       bool* left_elements = (bool*)left->elements;
       bool* result_elements = ALLOC_N(bool, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
+      if(RB_TYPE_P(another, T_TRUE) || RB_TYPE_P(another, T_FALSE)){
         for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
+          result_elements[index] = left_elements[index] + (another ? Qtrue : Qfalse);
         }
       }
       else{

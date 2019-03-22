@@ -14,14 +14,26 @@ class NMatrix::ElementWiseTest < Minitest::Test
   end
 
   def test_add
-    result = NMatrix.new  [2,2],[2.9, 9.4, 6.1,   8.2]
+    result = NMatrix.new  [2,2],[2.9, 9.4, 6.1, 8.2]
     answer = @left + @right
+    assert_equal answer, result
+
+    result = NMatrix.new  [2,2],[1.1, 4.3, 3.1, 4.3]
+    answer = @left + 0.1
     assert_equal answer, result
   end
 
   def test_add_bool
     result = NMatrix.new  [2,2],[true, true, true, false], :nm_bool
     answer = @boolean_left + @boolean_right
+    assert_equal answer, result
+
+    result = NMatrix.new  [2,2],[true, true, true, true], :nm_bool
+    answer = @boolean_left + true
+    assert_equal answer, result
+
+    result = NMatrix.new  [2,2],[true, false, true, false], :nm_bool
+    answer = @boolean_left + false
     assert_equal answer, result
   end
 
