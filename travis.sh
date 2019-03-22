@@ -18,6 +18,7 @@ then
   if [ $TRAVIS_RUBY_VERSION == '2.2.4' ] || [ $TRAVIS_RUBY_VERSION == '2.1.8' ]
   then
     gem install --no-document bundler -v '~> 1.6';
+    gem install --no-document parallel -v '1.13.0';
   else
     gem install --no-document bundler;
   fi
