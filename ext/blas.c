@@ -15,9 +15,14 @@ VALUE nm_dot(VALUE self, VALUE another){
   result->count = result->shape[0] * result->shape[1];
 
   switch (left->dtype) {
+    case nm_bool:
+    {
+      // Not supported message and casting to double
+      break;
+    }
     case nm_int:
     {
-      ///* Not supported message and casting to double */
+      // Not supported message and casting to double
       break;
     }
     case nm_float64:
@@ -64,9 +69,14 @@ VALUE nm_norm2(VALUE self){
   VALUE val = Qnil;
 
   switch (matrix->dtype) {
+    case nm_bool:
+    {
+      // Not supported message and casting to double
+      break;
+    }
     case nm_int:
     {
-      ///* Not supported message and casting to double */
+      // Not supported message and casting to double
       break;
     }
     case nm_float32:

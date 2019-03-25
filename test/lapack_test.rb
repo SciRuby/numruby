@@ -23,7 +23,7 @@ class NMatrix::LapackTest < Minitest::Test
       input = NMatrix.new [2,2], [2, -1, -4, 3], dtype
       rhs = NMatrix.new [2, 1], [4, 7], dtype
       solution = NMatrix.new [2,1], [9.5, 15], dtype
-      assert_equal  input.solve(rhs), solution
+      assert_equal input.solve(rhs), solution
     end
   end
 
