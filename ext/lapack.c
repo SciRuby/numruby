@@ -17,7 +17,7 @@ VALUE nm_invert(VALUE self){
   int n = (int)matrix->shape[1];
   int m = (int)matrix->shape[0];
   int* ipiv = ALLOC_N(int, min(m,n)+1);
-  getrf(matrix->elements, matrix->shape[1], matrix->shape[0], ipiv, elements);
+  dgetrf(matrix->elements, matrix->shape[1], matrix->shape[0], ipiv, elements);
   int lda = n;
 
   LAPACKE_dgetri(101, n, elements, lda, ipiv);
@@ -26,13 +26,22 @@ VALUE nm_invert(VALUE self){
 }
 
 
-void getrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, double* arr2) {
+void dgetrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, double* arr2) {
   int m = (int)cols;
   int n = (int)rows;
   memcpy(arr2, arr, sizeof(double)*rows*cols);
   int lda = m;
   LAPACKE_dgetrf(101,m,n,arr2,lda,ipiv);
 }
+
+void sgetrf(const float* arr, const size_t cols, const size_t rows, int* ipiv, float* arr2) {
+  int m = (int)cols;
+  int n = (int)rows;
+  memcpy(arr2, arr, sizeof(float)*rows*cols);
+  int lda = m;
+  LAPACKE_sgetrf(101,m,n,arr2,lda,ipiv);
+}
+
 
 VALUE nm_solve(VALUE self, VALUE rhs_val){
   nmatrix* lhs;
@@ -75,24 +84,54 @@ VALUE nm_det(VALUE self){
 
   int n = (int)matrix->shape[1];
   int m = (int)matrix->shape[0];
-
-  double* elements = ALLOC_N(double, matrix->count);
-  int* pivot = ALLOC_N(int, min(m,n)+1);
-
-  getrf(matrix->elements, matrix->shape[1], matrix->shape[0], pivot, elements);
-
-  int num_perm = 0;
-  int j = 0;
-  for(int i = 0; i < min(m,n)+1; ++i){
-    if(pivot[i]-1 != j){num_perm += 1;}
-    j++;
-  }
+  
   double prod;
+  
+  switch (matrix->dtype) {
+    case nm_float32:
+    {
+      
+      float* elements = ALLOC_N(float, matrix->count);
+      int* pivot = ALLOC_N(int, min(m,n)+1);
+    
+      sgetrf(matrix->elements, matrix->shape[1], matrix->shape[0], pivot,  elements);
+    
+      int num_perm = 0;
+      int j = 0;
+      for(int i = 0; i < min(m,n)+1; ++i){
+        if(pivot[i]-1 != j){num_perm += 1;}
+        j++;
+      }
+    
+      prod = (num_perm % 2 == 1) ? 1 : -1;
+    
+      for(int i =0; i < min(m,n); i++){
+        prod *= elements[matrix->shape[0]*i + i];
+      }
+      break;
+    }
+    case nm_float64:
+    {
 
-  prod = (num_perm % 2 == 1) ? 1 : -1;
-
-  for(int i =0; i < min(m,n); i++){
-    prod *= elements[matrix->shape[0]*i + i];
+      double* elements = ALLOC_N(double, matrix->count);
+      int* pivot = ALLOC_N(int, min(m,n)+1);
+    
+      dgetrf(matrix->elements, matrix->shape[1], matrix->shape[0], pivot, elements);
+    
+      int num_perm = 0;
+      int j = 0;
+      for(int i = 0; i < min(m,n)+1; ++i){
+        if(pivot[i]-1 != j){num_perm += 1;}
+        j++;
+      }
+    
+      prod = (num_perm % 2 == 1) ? 1 : -1;
+    
+      for(int i =0; i < min(m,n); i++){
+        prod *= elements[matrix->shape[0]*i + i];
+      }
+      break;
+    }
   }
   return DBL2NUM(prod);
 }
