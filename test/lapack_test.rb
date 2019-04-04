@@ -28,17 +28,17 @@ class NMatrix::LapackTest < Minitest::Test
   end
 
   def test_det
-    @dtypes.each do |dtype|
-      input = NMatrix.new [2,2], [2, -1, -4, 3]
+    @dtypes2.each do |dtype|
+      input = NMatrix.new [2,2], [2, -1, -4, 3], dtype
       assert_equal input.det, 2
     end
   end
 
   def test_least_square
     @dtypes2.each do |dtype|
-      input = NMatrix.new [2,2], [2, -1, -4, 3]
-      rhs = NMatrix.new [2, 1], [4, 7]
-      solution = NMatrix.new [2,1], [9.5, 15]
+      input = NMatrix.new [2,2], [2, -1, -4, 3], dtype
+      rhs = NMatrix.new [2, 1], [4, 7], dtype
+      solution = NMatrix.new [2,1], [9.5, 15], dtype
       assert_equal input.least_square(rhs), solution
     end
   end
