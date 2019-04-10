@@ -12,6 +12,14 @@ class NMatrix::CreationTest < Minitest::Test
     assert_equal [2,2], @b.shape
   end
 
+  def test_dtype
+    assert_equal :nm_float64, @i.dtype
+  end
+
+  def test_stype
+    assert_equal :nm_dense, @i.stype
+  end
+
   def test_elements
     assert_equal [1, 4.2, 3, 4], @i.elements
     assert_equal [true, true, false, true], @b.elements

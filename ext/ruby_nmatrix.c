@@ -295,7 +295,7 @@ void Init_nmatrix() {
    * Exception raised when there's a problem with data.
    */
   DataTypeError = rb_define_class("DataTypeError", rb_eStandardError);
-  
+
   /*
    * Exception raised when the matrix shape is not appropriate for a given operation.
    */
@@ -305,10 +305,10 @@ void Init_nmatrix() {
    * SparseNMatrix Class definition
    */
   SparseNMatrix = rb_define_class("SparseNMatrix", rb_cObject);
-  
+
   // Class method
   rb_define_alloc_func(SparseNMatrix, nm_sparse_alloc);
-  
+
   // Singleton Methods
   rb_define_singleton_method(SparseNMatrix, "coo", coo_sparse_nmatrix_init, -1);
   rb_define_singleton_method(SparseNMatrix, "csr", csr_sparse_nmatrix_init, -1);
@@ -445,14 +445,14 @@ VALUE constant_nmatrix(int argc, VALUE* argv, double constant){
  *
  *     Default value of dtype -> nm_float64
  *     Default value of stype -> nm_dense
- *     
+ *
  *     shape and initial_array are mendatory.
  *
  *     shape is an array with length equal to number of dimensions. Each value of array is a positive integer
  *     and specifies length of each dimension.
  *
  *     initial_array is an array with length equal to number of elements in the matrix
- *     and specifies initial values of matrix elements. 
+ *     and specifies initial values of matrix elements.
  */
 VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
   nmatrix* mat;
@@ -708,7 +708,7 @@ VALUE nm_get_dtype(VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
 
-  return rb_str_new_cstr(DTYPE_NAMES[nmat->dtype]);
+  return ID2SYM(rb_intern(DTYPE_NAMES[nmat->dtype]));
 }
 
 /*
@@ -721,7 +721,7 @@ VALUE nm_get_stype(VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
 
-  return rb_str_new_cstr(STYPE_NAMES[nmat->stype]);
+  return ID2SYM(rb_intern(STYPE_NAMES[nmat->stype]));
 }
 
 /*
@@ -734,12 +734,12 @@ VALUE nm_eqeq(VALUE self, VALUE another){
   nmatrix* right;
   Data_Get_Struct(self, nmatrix, left);
   Data_Get_Struct(another, nmatrix, right);
-  
+
   switch (right->dtype) {
     case nm_float64: {
       double* left_elements = (double*)left->elements;
       double* right_elements = (double*)right->elements;
-    
+
       for(size_t index = 0; index < left->count; index++){
         if(fabs(left_elements[index] - right_elements[index]) > 1e-3){
           return Qfalse;
@@ -747,11 +747,11 @@ VALUE nm_eqeq(VALUE self, VALUE another){
       }
       break;
     }
-    
+
     case nm_float32: {
       float* left_elements = (float*)left->elements;
       float* right_elements = (float*)right->elements;
-    
+
       for(size_t index = 0; index < left->count; index++){
         if(fabs(left_elements[index] - right_elements[index]) > 1e-3){
           return Qfalse;
@@ -760,7 +760,7 @@ VALUE nm_eqeq(VALUE self, VALUE another){
       break;
     }
   }
-      
+
 
   return Qtrue;
 }
