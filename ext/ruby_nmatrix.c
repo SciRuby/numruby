@@ -179,6 +179,10 @@ VALUE nm_alloc(VALUE klass);
 void nm_free(nmatrix* mat);
 
 VALUE nm_eqeq(VALUE self, VALUE another);
+VALUE nm_gt(  VALUE self, VALUE another);
+VALUE nm_gteq(VALUE self, VALUE another);
+VALUE nm_lt(  VALUE self, VALUE another);
+VALUE nm_lteq(VALUE self, VALUE another);
 VALUE nm_add(VALUE self, VALUE another);
 
 #define DECL_ELEMENTWISE_RUBY_ACCESSOR(name)    VALUE nm_##name(VALUE self, VALUE another);
@@ -338,6 +342,10 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "stype",    nm_get_stype, 0);
 
   rb_define_method(NMatrix, "==", nm_eqeq, 1);
+  rb_define_method(NMatrix, ">",  nm_gt,   1);
+  rb_define_method(NMatrix, ">=", nm_gteq, 1);
+  rb_define_method(NMatrix, "<",  nm_lt,   1);
+  rb_define_method(NMatrix, "<=", nm_lteq, 1);
 
   rb_define_method(NMatrix, "+", nm_add, 1);
   rb_define_method(NMatrix, "-", nm_subtract, 1);
@@ -761,8 +769,156 @@ VALUE nm_eqeq(VALUE self, VALUE another){
     }
   }
 
-
   return Qtrue;
+}
+
+/*
+ * Greater operator.
+ * Returns a single true or false value indicating whether
+ * the element in a matrix is greater or smaller
+ *
+ */
+VALUE nm_gt(VALUE self, VALUE another){
+  nmatrix* left;
+  Data_Get_Struct(self, nmatrix, left);
+
+  nmatrix* result = ALLOC(nmatrix);
+  result->dtype = nm_bool;
+  result->stype = left->stype;
+  result->count = left->count;
+  result->ndims = left->ndims;
+  result->shape = ALLOC_N(size_t, result->ndims);
+
+  result->shape[0] = left->shape[0];
+  result->shape[1] = left->shape[1];
+
+  bool* result_elements = ALLOC_N(bool, result->shape[0] * result->shape[1]);
+
+  switch (left->dtype) {
+    case nm_float64: {
+      double rha = NUM2DBL(another);
+      double* left_elements = (double*)left->elements;
+
+      for(size_t index = 0; index < left->count; index++){
+        result_elements[index] = ((left_elements[index] > rha) ? true : false);
+      }
+      break;
+    }
+  }
+  result->elements = result_elements;
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+}
+
+/*
+ * Greater operator.
+ * Returns a single true or false value indicating whether
+ * the element in a matrix is greater or smaller
+ *
+ */
+VALUE nm_gteq(VALUE self, VALUE another){
+  nmatrix* left;
+  Data_Get_Struct(self, nmatrix, left);
+
+  nmatrix* result = ALLOC(nmatrix);
+  result->dtype = nm_bool;
+  result->stype = left->stype;
+  result->count = left->count;
+  result->ndims = left->ndims;
+  result->shape = ALLOC_N(size_t, result->ndims);
+
+  result->shape[0] = left->shape[0];
+  result->shape[1] = left->shape[1];
+
+  bool* result_elements = ALLOC_N(bool, result->shape[0] * result->shape[1]);
+
+  switch (left->dtype) {
+    case nm_float64: {
+      double rha = NUM2DBL(another);
+      double* left_elements = (double*)left->elements;
+
+      for(size_t index = 0; index < left->count; index++){
+        result_elements[index] = ((left_elements[index] >= rha) ? true : false);
+      }
+      break;
+    }
+  }
+  result->elements = result_elements;
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+}
+
+/*
+ * Greater operator.
+ * Returns a single true or false value indicating whether
+ * the element in a matrix is greater or smaller
+ *
+ */
+VALUE nm_lt(VALUE self, VALUE another){
+  nmatrix* left;
+  Data_Get_Struct(self, nmatrix, left);
+
+  nmatrix* result = ALLOC(nmatrix);
+  result->dtype = nm_bool;
+  result->stype = left->stype;
+  result->count = left->count;
+  result->ndims = left->ndims;
+  result->shape = ALLOC_N(size_t, result->ndims);
+
+  result->shape[0] = left->shape[0];
+  result->shape[1] = left->shape[1];
+
+  bool* result_elements = ALLOC_N(bool, result->shape[0] * result->shape[1]);
+
+  switch (left->dtype) {
+    case nm_float64: {
+      double rha = NUM2DBL(another);
+      double* left_elements = (double*)left->elements;
+
+      for(size_t index = 0; index < left->count; index++){
+        result_elements[index] = ((left_elements[index] < rha) ? true : false);
+      }
+      break;
+    }
+  }
+  result->elements = result_elements;
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+}
+
+
+/*
+ * Greater operator.
+ * Returns a single true or false value indicating whether
+ * the element in a matrix is greater or smaller
+ *
+ */
+VALUE nm_lteq(VALUE self, VALUE another){
+  nmatrix* left;
+  Data_Get_Struct(self, nmatrix, left);
+
+  nmatrix* result = ALLOC(nmatrix);
+  result->dtype = nm_bool;
+  result->stype = left->stype;
+  result->count = left->count;
+  result->ndims = left->ndims;
+  result->shape = ALLOC_N(size_t, result->ndims);
+
+  result->shape[0] = left->shape[0];
+  result->shape[1] = left->shape[1];
+
+  bool* result_elements = ALLOC_N(bool, result->shape[0] * result->shape[1]);
+
+  switch (left->dtype) {
+    case nm_float64: {
+      double rha = NUM2DBL(another);
+      double* left_elements = (double*)left->elements;
+
+      for(size_t index = 0; index < left->count; index++){
+        result_elements[index] = ((left_elements[index] <= rha) ? true : false);
+      }
+      break;
+    }
+  }
+  result->elements = result_elements;
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
 /*
