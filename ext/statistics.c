@@ -1,3 +1,12 @@
+/*
+ * Calculates the weighted average of elements across a given axis (dimension).
+ * Returns a list of weighted averages having length equal to the length of given axis.
+ *
+ * Args:
+ * 	- input matrix, type: NMatrix
+ *	- axis (dimension), type: integer
+ *	- weight matrix, type: NMatrix
+ */
 VALUE average_nmatrix(int argc, VALUE* argv){
   nmatrix* matrix;
   Data_Get_Struct(argv[0], nmatrix, matrix);
@@ -45,5 +54,5 @@ VALUE average_nmatrix(int argc, VALUE* argv){
     result->elements = result_elements;
   }
 
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);;
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
