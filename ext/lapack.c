@@ -1,3 +1,10 @@
+/*
+ *	Calculates matrix inverse.
+ *	Args:
+ *	-	self matrix, type: NMatrix
+ *	
+ *	returns the inverse matrix of type NMatrix
+*/
 VALUE nm_invert(VALUE self){
   nmatrix* matrix;
   Data_Get_Struct(self, nmatrix, matrix);
@@ -42,7 +49,14 @@ void sgetrf(const float* arr, const size_t cols, const size_t rows, int* ipiv, f
   LAPACKE_sgetrf(101,m,n,arr2,lda,ipiv);
 }
 
-
+/*
+ *	Solves a system of linear equations.
+ *	Args:
+ *	-	lhs matrix (square), type: NMatrix
+ *	-	rhs vector, type: NMatrix
+ *	
+ *	returns the vector of type NMatrix with values of unknowns
+*/
 VALUE nm_solve(VALUE self, VALUE rhs_val){
   nmatrix* lhs;
   nmatrix* rhs;
@@ -78,6 +92,14 @@ VALUE nm_solve(VALUE self, VALUE rhs_val){
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
+
+/*
+ *	Calculates matrix determinant.
+ *	Args:
+ *	-	matrix, type: NMatrix
+ *	
+ *	returns the determinant of matrix of type integer
+*/
 VALUE nm_det(VALUE self){
   nmatrix* matrix;
   Data_Get_Struct(self, nmatrix, matrix);

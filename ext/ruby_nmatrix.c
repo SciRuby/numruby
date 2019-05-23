@@ -1223,6 +1223,13 @@ DEF_ELEMENTWISE_RUBY_ACCESSOR(subtract, -)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(multiply, *)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(divide, /)
 
+/*
+ *  Elementwise sin operator.
+ *  Takes in the given matrix
+ *  and returns the matrix with each element
+ *  as corresponding sin of the value of that element.
+*/
+
 VALUE nm_sin(VALUE self){
   nmatrix* input;
   Data_Get_Struct(self, nmatrix, input);

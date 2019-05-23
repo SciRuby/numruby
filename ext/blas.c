@@ -1,3 +1,11 @@
+/*
+ *	Calculates the dot product of two matrices.
+ *	Args:
+ *	-	self matrix, type: NMatrix
+ *	-	another matrix, type: NMatrix
+ *	
+ *	returns the resultant matrix of type NMatrix
+ */
 VALUE nm_dot(VALUE self, VALUE another){
   nmatrix* left;
   nmatrix* right;
@@ -62,6 +70,13 @@ VALUE nm_dot(VALUE self, VALUE another){
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
+/*
+ *	Calculates matrix norm.
+ *	Args:
+ *	-	self matrix, type: NMatrix
+ *	
+ *	returns the norm matrix of type float
+ */
 VALUE nm_norm2(VALUE self){
   nmatrix* matrix;
   Data_Get_Struct(self, nmatrix, matrix);
