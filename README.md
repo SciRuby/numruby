@@ -1,17 +1,18 @@
-# nmatrix_reloaded
+# numruby (nmatrix_reloaded)
+
 Reimplementing NMatrix for fun
 
 ## NMatrix
 
-[![Build Status](https://travis-ci.org/prasunanand/nmatrix_reloaded.svg?branch=master)](https://travis-ci.org/prasunanand/nmatrix_reloaded)
+[![Build Status](https://travis-ci.org/sciruby/numruby.svg?branch=master)](https://travis-ci.org/sciruby/numruby)
 
 Fast Numerical Linear Algebra Library for Ruby
 
 ## Installation
 
 ```sh
-git clone https://github.com/prasunanand/nmatrix_reloaded
-cd nmatrix_reloaded/
+git clone https://github.com/sciruby/numruby
+cd numruby/
 gem install bundler
 bundle install
 rake compile
