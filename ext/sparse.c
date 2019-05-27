@@ -1,7 +1,6 @@
 
 //allocates memory to the given sparse matrix object
-VALUE nm_sparse_alloc(VALUE klass)
-{
+VALUE nm_sparse_alloc(VALUE klass){
   csr_nmatrix* mat = ALLOC(csr_nmatrix);
 
   return Data_Wrap_Struct(klass, NULL, nm_free, mat);
@@ -388,7 +387,7 @@ VALUE nm_sparse_to_array(VALUE self){
 
   size_t count = input->count;
   VALUE* array = ALLOC_N(VALUE, input->count);
-  switch (input->dtype) {
+  switch (input->sptype) {
     case coo:
     {
       double* elements = ALLOC_N(double, count);
