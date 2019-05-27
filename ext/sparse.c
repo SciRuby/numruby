@@ -305,6 +305,15 @@ VALUE dia_sparse_nmatrix_init(int argc, VALUE* argv){
     }
 
     switch(mat->dtype){
+      case nm_bool:
+      {
+        bool* elements = ALLOC_N(bool, (size_t)RARRAY_LEN(argv[1]));
+        for (size_t index = 0; index < (size_t)RARRAY_LEN(argv[1]); index++) {
+          elements[index] = (bool)NUM2DBL(RARRAY_AREF(argv[1], index));
+        }
+        mat->diag->elements = elements;
+        break;
+      }
       case nm_int:
       {
         int* elements = ALLOC_N(int, (size_t)RARRAY_LEN(argv[1]));
@@ -464,15 +473,80 @@ VALUE nm_sparse_to_nmatrix(VALUE self){
   result->shape[1] = input->shape[1];
   result->count = input->count;
 
+  void* elements;
+
   switch (input->dtype) {
+    case nm_bool:
+    {
+      bool* temp_elements = ALLOC_N(bool, result->count);
+      elements = temp_elements;
+    }
+    case nm_int:
+    {
+      int* temp_elements = ALLOC_N(int, result->count);
+      elements = temp_elements;
+    }
+    case nm_float32:
+    {
+      float* temp_elements = ALLOC_N(float, result->count);
+      elements = temp_elements;
+    }
     case nm_float64:
     {
-      double* elements = ALLOC_N(double, result->count);
+      double* temp_elements = ALLOC_N(double, result->count);
+      elements = temp_elements;
+    }
+    case nm_complex32:
+    {
+      float complex* temp_elements = ALLOC_N(float complex, result->count);
+      elements = temp_elements;
+    }
+    case nm_complex64:
+    {
+      float complex* temp_elements = ALLOC_N(float complex, result->count);
+      elements = temp_elements;
+    }
+  }
+  switch (input->sptype) {
+    case coo:
+    {
+      get_dense_from_coo(input->coo->elements,
+                        input->shape[0],
+                        input->shape[1],
+                        input->coo->ia,
+                        input->coo->ja,
+                        elements);
+      result->elements = elements;
+      break;
+    }
+    case csc:
+    {
+      get_dense_from_csc(input->csc->elements,
+                        input->shape[0],
+                        input->shape[1],
+                        input->csc->ia,
+                        input->csc->ja,
+                        elements);
+      result->elements = elements;
+      break;
+    }
+    case csr:
+    {
       get_dense_from_csr(input->csr->elements,
                         input->shape[0],
                         input->shape[1],
                         input->csr->ia,
                         input->csr->ja,
+                        elements);
+      result->elements = elements;
+      break;
+    }
+    case dia:
+    {
+      get_dense_from_dia(input->diag->elements,
+                        input->shape[0],
+                        input->shape[1],
+                        input->diag->offset,
                         elements);
       result->elements = elements;
       break;
@@ -483,9 +557,9 @@ VALUE nm_sparse_to_nmatrix(VALUE self){
 
 //extracts elements from coo type sparse matrix
 //called by nm_sparse_to_nmatrix to get elements list
-void get_dense_from_coo(const double* data, const size_t rows,
+void get_dense_from_coo(const void* data, const size_t rows,
                         const size_t cols, const size_t* ia,
-                        const size_t* ja, double* elements){
+                        const size_t* ja, void* elements){
   for(size_t i = 0; i < rows*cols; ++i){ elements[i] = 0; }
 
   size_t index = 0;
@@ -500,9 +574,9 @@ void get_dense_from_coo(const double* data, const size_t rows,
 
 //extracts elements from csc type sparse matrix
 //called by nm_sparse_to_nmatrix to get elements list
-void get_dense_from_csc(const double* data, const size_t rows,
+void get_dense_from_csc(const void* data, const size_t rows,
                         const size_t cols, const size_t* ia,
-                        const size_t* ja, double* elements){
+                        const size_t* ja, void* elements){
   for(size_t i = 0; i < rows*cols; ++i){ elements[i] = 0; }
 
   size_t index = 0;
@@ -517,9 +591,9 @@ void get_dense_from_csc(const double* data, const size_t rows,
 
 //extracts elements from csr type sparse matrix
 //called by nm_sparse_to_nmatrix to get elements list
-void get_dense_from_csr(const double* data, const size_t rows,
+void get_dense_from_csr(const void* data, const size_t rows,
                         const size_t cols, const size_t* ia,
-                        const size_t* ja, double* elements){
+                        const size_t* ja, void* elements){
   for(size_t i = 0; i < rows*cols; ++i){ elements[i] = 0; }
 
   size_t index = 0;
@@ -534,9 +608,9 @@ void get_dense_from_csr(const double* data, const size_t rows,
 
 //extracts elements from dia type sparse matrix
 //called by nm_sparse_to_nmatrix to get elements list
-void get_dense_from_dia(const double* data, const size_t rows,
+void get_dense_from_dia(const void* data, const size_t rows,
                         const size_t cols, const size_t* offset,
-                        double* elements){
+                        void* elements){
   for(size_t i = 0; i < rows*cols; ++i){ elements[i] = 0; }
 
   size_t index = 0;
