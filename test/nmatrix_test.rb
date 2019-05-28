@@ -5,6 +5,7 @@ class NMatrix::CreationTest < Minitest::Test
   def setup
     @i = NMatrix.new [2,2],[1, 4.2, 3,4]
     @b = NMatrix.new [2,2],[true, true, false, true], :nm_bool
+    @m = NMatrix.new [2,2,2],[1,2,3,4,5,6,7,8]
   end
 
   def test_dims
@@ -27,11 +28,14 @@ class NMatrix::CreationTest < Minitest::Test
 
   def test_accessor_get
     assert_equal @i[0,1], 4.2
+    assert_equal @m[0,0,1], 2
   end
 
   def test_accessor_set
     @i[0,0] = 6
     assert_equal @i[0,0], 6
+    @m[1,1,0] = 11
+    assert_equal @m[1,1,0], 11
   end
 
 end
