@@ -267,7 +267,7 @@ VALUE nm_sparse_to_array(VALUE self);
  * Sparse matrix to NMatrix
  *
  * @return NMatrix
-*/
+ */
 VALUE nm_sparse_to_nmatrix(VALUE self);
 
 void get_dense_from_coo(const double* data, const size_t rows,
@@ -424,7 +424,7 @@ VALUE constant_nmatrix(int argc, VALUE* argv, double constant){
   nmatrix* mat = ALLOC(nmatrix);
   mat->stype = nm_dense;
   mat->dtype = nm_float64;
-  mat->ndims = 2;
+  mat->ndims = (size_t)RARRAY_LEN(argv[0]);
   mat->count = 1;
   mat->shape = ALLOC_N(size_t, mat->ndims);
   for (size_t index = 0; index < mat->ndims; index++) {
@@ -467,7 +467,7 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
   Data_Get_Struct(self, nmatrix, mat);
 
   if(argc > 0){
-    mat->ndims = 2;
+    mat->ndims = (size_t)RARRAY_LEN(argv[0]);
     mat->count = 1;
     mat->shape = ALLOC_N(size_t, mat->ndims);
     for (size_t index = 0; index < mat->ndims; index++) {
@@ -1484,6 +1484,24 @@ DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(tgamma, tgamma)
 DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(floor, floor)
 DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(ceil, ceil)
 
+void get_stride(nmatrix* nmat, size_t* stride){
+  size_t val = 1;
+  for(int i = (nmat->ndims)-1; i >= 0; --i){ //using int here instead of size_t
+    stride[i] = val;                         //because size_t does not support
+    val *= nmat->shape[i];                    //decrement operator
+  }
+} 
+
+size_t get_index(nmatrix* nmat, VALUE* indices){
+  size_t index = 0;
+  size_t* stride = (size_t*)calloc(nmat->ndims, sizeof(size_t));
+  get_stride(nmat, stride);
+  for(size_t i = 0; i < nmat->ndims; ++i){
+    index += ((size_t)FIX2LONG(indices[i]) * stride[i]);
+  }
+  return index;
+}
+
 /*
  * Get the element of a matrix at the given index
  */
@@ -1491,7 +1509,8 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
 
-  size_t index = (size_t)FIX2LONG(argv[0]) * nmat->shape[1] +  (size_t)FIX2LONG(argv[1]);
+  size_t index = get_index(nmat, argv);
+
   double* elements = (double*)nmat->elements;
   double val = elements[index];
 
@@ -1505,10 +1524,10 @@ VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
 
-  size_t index = (size_t)FIX2LONG(argv[0]) * nmat->shape[1] +  (size_t)FIX2LONG(argv[1]);
+  size_t index = get_index(nmat, argv);
 
   double* elements = (double*)nmat->elements;
-  elements[index] = NUM2DBL(argv[2]);
+  elements[index] = NUM2DBL(argv[nmat->ndims]);
 
   nmat->elements = elements;
   return argv[2];
