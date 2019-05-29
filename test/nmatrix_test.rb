@@ -31,6 +31,11 @@ class NMatrix::CreationTest < Minitest::Test
     assert_equal [1, 2, 3, 4], @n.elements
   end
 
+  def test_dim
+    assert_equal 2, @i.dim
+    assert_equal 3, @m.dim
+  end
+
   def test_accessor_get
     assert_equal @i[0,1], 4.2
     assert_equal @m[0,0,1], 2

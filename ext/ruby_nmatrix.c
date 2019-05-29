@@ -335,7 +335,7 @@ void Init_nmatrix() {
 
   // Instance Methods
   rb_define_method(NMatrix, "initialize", nmatrix_init, -1);
-  rb_define_method(NMatrix, "dim",      nm_get_dim, -1);
+  rb_define_method(NMatrix, "dim",      nm_get_dim, 0);
   rb_define_method(NMatrix, "shape",    nm_get_shape, 0);
   rb_define_method(NMatrix, "elements", nm_get_elements, 0);
   rb_define_method(NMatrix, "dtype",    nm_get_dtype, 0);
@@ -598,7 +598,11 @@ void nm_free(nmatrix* mat){
 
 // Returns number of dimensions of matrix
 VALUE nm_get_dim(VALUE self){
-  return INT2NUM(2);
+  nmatrix* input;
+
+  Data_Get_Struct(self, nmatrix, input);
+
+  return INT2NUM(input->ndims);
 }
 
 // Returns a flat list(one dimensional array) of elements values of matrix
