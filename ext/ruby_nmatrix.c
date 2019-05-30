@@ -178,6 +178,10 @@ VALUE nm_get_shape(VALUE self);
 VALUE nm_alloc(VALUE klass);
 void nm_free(nmatrix* mat);
 
+VALUE nm_dense_each(VALUE nmatrix);
+VALUE nm_each_with_indices(VALUE nmatrix);
+VALUE nm_each_stored_with_indices(VALUE nmatrix);
+
 VALUE nm_eqeq(VALUE self, VALUE another);
 VALUE nm_gt(  VALUE self, VALUE another);
 VALUE nm_gteq(VALUE self, VALUE another);
@@ -340,6 +344,11 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "elements", nm_get_elements, 0);
   rb_define_method(NMatrix, "dtype",    nm_get_dtype, 0);
   rb_define_method(NMatrix, "stype",    nm_get_stype, 0);
+
+  // Iterators Methods
+  rb_define_method(NMatrix, "dense_each", nm_dense_each, 0);
+  rb_define_method(NMatrix, "each_with_indices", nm_each_with_indices, 0);
+  rb_define_method(NMatrix, "each_stored_with_indices", nm_each_stored_with_indices, 0);
 
   rb_define_method(NMatrix, "==", nm_eqeq, 1);
   rb_define_method(NMatrix, ">",  nm_gt,   1);
@@ -734,6 +743,18 @@ VALUE nm_get_stype(VALUE self){
   Data_Get_Struct(self, nmatrix, nmat);
 
   return ID2SYM(rb_intern(STYPE_NAMES[nmat->stype]));
+}
+
+VALUE nm_dense_each(VALUE nmatrix) {
+
+}
+
+VALUE nm_each_with_indices(VALUE nmatrix) {
+
+}
+
+VALUE nm_each_stored_with_indices(VALUE nmatrix) {
+
 }
 
 /*
