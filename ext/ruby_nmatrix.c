@@ -178,16 +178,18 @@ VALUE nm_get_shape(VALUE self);
 VALUE nm_alloc(VALUE klass);
 void nm_free(nmatrix* mat);
 
-VALUE nm_dense_each(VALUE nmatrix);
-VALUE nm_each_with_indices(VALUE nmatrix);
-VALUE nm_each_stored_with_indices(VALUE nmatrix);
+VALUE nm_each(VALUE self);
+VALUE nm_each_with_indices(VALUE self);
+//VALUE nm_each_stored_with_indices(VALUE self);
+//VALUE nm_each_ordered_stored_with_indices(VALUE self);
+//VALUE nm_map_stored(VALUE self);
 
 VALUE nm_eqeq(VALUE self, VALUE another);
 VALUE nm_gt(  VALUE self, VALUE another);
 VALUE nm_gteq(VALUE self, VALUE another);
 VALUE nm_lt(  VALUE self, VALUE another);
 VALUE nm_lteq(VALUE self, VALUE another);
-VALUE nm_add(VALUE self, VALUE another);
+VALUE nm_add( VALUE self, VALUE another);
 
 #define DECL_ELEMENTWISE_RUBY_ACCESSOR(name)    VALUE nm_##name(VALUE self, VALUE another);
 
@@ -346,9 +348,11 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "stype",    nm_get_stype, 0);
 
   // Iterators Methods
-  rb_define_method(NMatrix, "dense_each", nm_dense_each, 0);
+  rb_define_method(NMatrix, "each", nm_each, 0);
   rb_define_method(NMatrix, "each_with_indices", nm_each_with_indices, 0);
-  rb_define_method(NMatrix, "each_stored_with_indices", nm_each_stored_with_indices, 0);
+  //rb_define_method(NMatrix, "each_stored_with_indices", nm_each_stored_with_indices, 0);
+  //rb_define_method(NMatrix, "map_stored", nm_map_stored, 0);
+  //rb_define_method(NMatrix, "each_ordered_stored_with_indices", nm_each_ordered_stored_with_indices, 0);
 
   rb_define_method(NMatrix, "==", nm_eqeq, 1);
   rb_define_method(NMatrix, ">",  nm_gt,   1);
@@ -745,16 +749,189 @@ VALUE nm_get_stype(VALUE self){
   return ID2SYM(rb_intern(STYPE_NAMES[nmat->stype]));
 }
 
-VALUE nm_dense_each(VALUE nmatrix) {
+VALUE nm_each(VALUE self) {
+  nmatrix* input;
+  Data_Get_Struct(self, nmatrix, input);
 
+  size_t count = input->count;
+  VALUE* array = NULL;
+
+  switch(input->stype){
+    case nm_dense:
+    {
+      array = ALLOC_N(VALUE, input->count);
+      switch (input->dtype) {
+        case nm_bool:
+        {
+          bool* elements = (bool*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(elements[index] ? Qtrue : Qfalse);
+          }
+          break;
+        }
+        case nm_int:
+        {
+          int* elements = (int*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(INT2NUM(elements[index]));
+          }
+          break;
+        }
+        case nm_float64:
+        {
+          double* elements = (double*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(DBL2NUM(elements[index]));
+          }
+          break;
+        }
+        case nm_float32:
+        {
+          float* elements = (float*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(DBL2NUM(elements[index]));
+          }
+          break;
+        }
+        case nm_complex32:
+        {
+          float complex* elements = (float complex*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index]))));
+          }
+          break;
+        }
+        case nm_complex64:
+        {
+          double complex* elements = (double complex*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index]))));
+          }
+          break;
+        }
+      }
+      break;
+    }
+    case nm_sparse: //this is to be modified later during sparse work
+    {
+      switch(input->dtype){
+        case nm_float64:
+        {
+          count = input->sp->csr->count;
+          array = ALLOC_N(VALUE, count);
+          double* elements = (double*)input->sp->csr->elements;
+          for (size_t index = 0; index < count; index++){
+            rb_yield(DBL2NUM(elements[index]));
+          }
+          break;
+        }
+      }
+      break;
+    }
+  }
+
+  return self;
 }
 
-VALUE nm_each_with_indices(VALUE nmatrix) {
+VALUE nm_each_with_indices(VALUE self) {
+  nmatrix* input;
+  Data_Get_Struct(self, nmatrix, input);
 
+  size_t count = input->count;
+  VALUE* array = NULL;
+
+  VALUE* shape_array = ALLOC_N(VALUE, input->ndims);
+  for (size_t index = 0; index < input->ndims; index++){
+    shape_array[index] = LONG2NUM(input->shape[index]);
+  }
+
+  switch(input->stype){
+    case nm_dense:
+    {
+      array = ALLOC_N(VALUE, input->count);
+      switch (input->dtype) {
+        case nm_bool:
+        {
+          bool* elements = (bool*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(elements[index] ? Qtrue : Qfalse);
+          }
+          break;
+        }
+        case nm_int:
+        {
+          int* elements = (int*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(INT2NUM(elements[index]));
+          }
+          break;
+        }
+        case nm_float64:
+        {
+          double* elements = (double*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            VALUE* ary = ALLOC_N(VALUE, input->ndims + 1);
+
+            ary[0] = DBL2NUM(elements[index]);
+
+            for (size_t dim_index = 0; dim_index < input->ndims; dim_index++){
+              ary[dim_index + 1] = shape_array[dim_index];
+            }
+
+            rb_yield(rb_ary_new4(input->ndims + 1, ary));
+          }
+          break;
+        }
+        case nm_float32:
+        {
+          float* elements = (float*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(DBL2NUM(elements[index]));
+          }
+          break;
+        }
+        case nm_complex32:
+        {
+          float complex* elements = (float complex*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index]))));
+          }
+          break;
+        }
+        case nm_complex64:
+        {
+          double complex* elements = (double complex*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index]))));
+          }
+          break;
+        }
+      }
+      break;
+    }
+    case nm_sparse: //this is to be modified later during sparse work
+    {
+      switch(input->dtype){
+        case nm_float64:
+        {
+          count = input->sp->csr->count;
+          array = ALLOC_N(VALUE, count);
+          double* elements = (double*)input->sp->csr->elements;
+          for (size_t index = 0; index < count; index++){
+            rb_yield(DBL2NUM(elements[index]));
+          }
+          break;
+        }
+      }
+      break;
+    }
+  }
+
+  return self;
 }
 
-VALUE nm_each_stored_with_indices(VALUE nmatrix) {
-
+VALUE nm_each_stored_with_indices(VALUE self) {
+  return Qnil;
 }
 
 /*
