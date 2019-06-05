@@ -833,6 +833,24 @@ VALUE nm_each(VALUE self) {
   return self;
 }
 
+void increment_state(VALUE* state_array, VALUE* shape_array, size_t ndims) {
+
+  for (size_t index = ndims; index > 0; index--) {  //size_t does not support decrement operator
+    int curr_dim_index = (int)NUM2INT(state_array[index]);
+    int curr_dim_length = (int)NUM2INT(shape_array[index - 1]);
+
+    if (curr_dim_index + 1 == curr_dim_length) {
+      curr_dim_index = 0;
+      state_array[index] = INT2NUM(curr_dim_index);
+    } else {
+      curr_dim_index++;
+      state_array[index] = INT2NUM(curr_dim_index);
+      break;
+    }
+
+  }
+}
+
 VALUE nm_each_with_indices(VALUE self) {
   nmatrix* input;
   Data_Get_Struct(self, nmatrix, input);
@@ -845,6 +863,15 @@ VALUE nm_each_with_indices(VALUE self) {
     shape_array[index] = LONG2NUM(input->shape[index]);
   }
 
+
+  //state_array will store the value and indices
+  //of current element during iteration
+  VALUE* state_array = ALLOC_N(VALUE, input->ndims + 1);
+  state_array[0] = -1;  //initialized below inside switch
+  for (size_t index = 1; index < input->ndims + 1; index++){
+    state_array[index] = INT2NUM(0);
+  }
+
   switch(input->stype){
     case nm_dense:
     {
@@ -854,7 +881,12 @@ VALUE nm_each_with_indices(VALUE self) {
         {
           bool* elements = (bool*)input->elements;
           for (size_t index = 0; index < input->count; index++){
-            rb_yield(elements[index] ? Qtrue : Qfalse);
+
+            state_array[0] = (elements[index] ? Qtrue : Qfalse);
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
           }
           break;
         }
@@ -862,7 +894,12 @@ VALUE nm_each_with_indices(VALUE self) {
         {
           int* elements = (int*)input->elements;
           for (size_t index = 0; index < input->count; index++){
-            rb_yield(INT2NUM(elements[index]));
+
+            state_array[0] = INT2NUM(elements[index]);
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
           }
           break;
         }
@@ -870,15 +907,12 @@ VALUE nm_each_with_indices(VALUE self) {
         {
           double* elements = (double*)input->elements;
           for (size_t index = 0; index < input->count; index++){
-            VALUE* ary = ALLOC_N(VALUE, input->ndims + 1);
 
-            ary[0] = DBL2NUM(elements[index]);
+            state_array[0] = DBL2NUM(elements[index]);
 
-            for (size_t dim_index = 0; dim_index < input->ndims; dim_index++){
-              ary[dim_index + 1] = shape_array[dim_index];
-            }
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
 
-            rb_yield(rb_ary_new4(input->ndims + 1, ary));
+            increment_state(state_array, shape_array, input->ndims);
           }
           break;
         }
@@ -886,7 +920,12 @@ VALUE nm_each_with_indices(VALUE self) {
         {
           float* elements = (float*)input->elements;
           for (size_t index = 0; index < input->count; index++){
-            rb_yield(DBL2NUM(elements[index]));
+
+            state_array[0] = DBL2NUM(elements[index]);
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
           }
           break;
         }
@@ -894,7 +933,12 @@ VALUE nm_each_with_indices(VALUE self) {
         {
           float complex* elements = (float complex*)input->elements;
           for (size_t index = 0; index < input->count; index++){
-            rb_yield(rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index]))));
+
+            state_array[0] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
           }
           break;
         }
@@ -902,7 +946,12 @@ VALUE nm_each_with_indices(VALUE self) {
         {
           double complex* elements = (double complex*)input->elements;
           for (size_t index = 0; index < input->count; index++){
-            rb_yield(rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index]))));
+
+            state_array[0] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
           }
           break;
         }
@@ -917,8 +966,13 @@ VALUE nm_each_with_indices(VALUE self) {
           count = input->sp->csr->count;
           array = ALLOC_N(VALUE, count);
           double* elements = (double*)input->sp->csr->elements;
-          for (size_t index = 0; index < count; index++){
-            rb_yield(DBL2NUM(elements[index]));
+          for (size_t index = 0; index < input->count; index++){
+
+            state_array[0] = DBL2NUM(elements[index]);
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
           }
           break;
         }
