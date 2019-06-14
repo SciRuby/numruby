@@ -1089,12 +1089,14 @@ VALUE nm_each_column(VALUE self) {
   nmatrix* input;
   Data_Get_Struct(self, nmatrix, input);
 
-  VALUE* array = NULL;
+  VALUE* curr_column = ALLOC_N(VALUE, input->shape[0]);
+  for (size_t index = 0; index < input->shape[0]; index++){
+    curr_column[index] = INT2NUM(0);
+  }
 
   switch(input->stype){
     case nm_dense:
     {
-      array = ALLOC_N(VALUE, input->count);
       switch (input->dtype) {
         case nm_bool:
         {
@@ -1115,9 +1117,15 @@ VALUE nm_each_column(VALUE self) {
         case nm_float64:
         {
           double* elements = (double*)input->elements;
-          for (size_t index = 0; index < input->count; index++){
-            rb_yield(DBL2NUM(elements[index]));
+          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
+
+          	for (size_t index = 0; index < input->shape[1]; index++){
+          		curr_row[index] = DBL2NUM(elements[(row_index * input->shape[1]) + index]);
+          	}
+          	//rb_yield(DBL2NUM(elements[row_index]));
+          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
           }
+
           break;
         }
         case nm_float32:
@@ -1969,10 +1977,77 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
 
   size_t index = get_index(nmat, argv);
 
-  double* elements = (double*)nmat->elements;
-  double val = elements[index];
+  switch(nmat->stype){
+    case nm_dense:
+    {
+      switch (nmat->dtype) {
+        case nm_bool:
+        {
+          bool* elements = (bool*)nmat->elements;
+          bool val = elements[index];
+          return (val ? Qtrue : Qfalse);
+          
+          break;
+        }
+        case nm_int:
+        {
+          int* elements = (int*)nmat->elements;
+          int val = elements[index];
+          return INT2NUM(val);
+          
+          break;
+        }
+        case nm_float64:
+        {
+          double* elements = (double*)nmat->elements;
+          double val = elements[index];
+          return DBL2NUM(val);
 
-  return DBL2NUM(val);
+          break;
+        }
+        case nm_float32:
+        {
+          float* elements = (float*)nmat->elements;
+          float val = elements[index];
+          return DBL2NUM(val);
+          
+          break;
+        }
+        case nm_complex32:
+        {
+          float complex* elements = (float complex*)nmat->elements;
+          float complex val = elements[index];
+          return rb_complex_new(DBL2NUM(creal(val)), DBL2NUM(cimag(val)));
+          
+          break;
+        }
+        case nm_complex64:
+        {
+          double complex* elements = (double complex*)nmat->elements;
+          double complex val = elements[index];
+          return rb_complex_new(DBL2NUM(creal(val)), DBL2NUM(cimag(val)));
+          
+          break;
+        }
+      }
+      break;
+    }
+    case nm_sparse: //this is to be modified later during sparse work
+    {
+      switch(input->dtype){
+        case nm_float64:
+        {
+          double* elements = (double*)nmat->sp->csr->elements;
+          double val = elements[index];
+          return DBL2NUM(val);
+          
+          break;
+        }
+      }
+      break;
+    }
+  }
+
 }
 
 /*
@@ -1984,11 +2059,86 @@ VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self){
 
   size_t index = get_index(nmat, argv);
 
-  double* elements = (double*)nmat->elements;
-  elements[index] = NUM2DBL(argv[nmat->ndims]);
+  switch(nmat->stype){
+    case nm_dense:
+    {
+      switch (nmat->dtype) {
+        case nm_bool:
+        {
+          bool* elements = (bool*)nmat->elements;
+          elements[index] = RTEST(argv[nmat->ndims]);
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+        case nm_int:
+        {
+          int* elements = (int*)nmat->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+        case nm_float64:
+        {
+          double* elements = (double*)nmat->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
 
-  nmat->elements = elements;
-  return argv[2];
+          nmat->elements = elements;
+          return argv[2];
+        }
+        case nm_float32:
+        {
+          float* elements = (float*)nmat->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
+
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+        case nm_complex32:
+        {
+          float complex* elements = (float complex*)nmat->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
+
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+        case nm_complex64:
+        {
+          double complex* elements = (double complex*)nmat->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
+
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+      }
+      break;
+    }
+    case nm_sparse: //this is to be modified later during sparse work
+    {
+      switch(input->dtype){
+        case nm_float64:
+        {
+          double* elements = (double*)nmat->sp->csr->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+      }
+      break;
+    }
+  }
+
 }
 
 // Return rank of the matrix
