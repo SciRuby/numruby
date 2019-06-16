@@ -1917,13 +1917,88 @@ size_t get_index(nmatrix* nmat, VALUE* indices){
 }
 
 /*
+ *
+ *
+ */
+void get_slice(nmatrix* nmat, VALUE* indices, nmatrix* slice){
+  /*
+    parse the indices to form ranges for C loops
+
+    then use them to fill up the elements
+  */
+
+  int slice_count = 0, slice_ndims = 0;
+
+  //std::pair<int, int> parsed_indices[nmat->ndims];
+  for(size_t i = 0; i < nmat->ndims; ++i){
+    //take each indices value and parse it
+    //to get the corr start and end index of the range
+
+    //if range len is > 1, then inc slice_ndims by 1
+    //and slice_count would be prod of all ranges len
+    
+    //indices[i];
+  }
+
+  slice->count = slice_count;
+  slice->ndims = slice_ndims;
+  slice->shape = ALLOC_N(size_t, slice->ndims);
+
+  switch (nmat->dtype) {
+    case nm_bool:
+    {
+      
+      break;
+    }
+    case nm_int:
+    {
+      
+      break;
+    }
+    case nm_float64:
+    {
+      double* elements = (double*)nmat->elements;
+
+      break;
+    }
+    case nm_float32:
+    {
+      
+      break;
+    }
+    case nm_complex32:
+    {
+      break;
+    }
+    case nm_complex64:
+    {
+      break;
+    }
+  }
+
+  //fill the nmatrix* slice with the req data
+}
+
+/*
+ *  checks if the given set of indices corresponds
+ *  to a single element or a slice.
+ *
+ */
+bool is_slice(nmatrix* nmat, VALUE* indices){
+  for(size_t i = 0; i < nmat->ndims; ++i){
+    if(rb_obj_is_kind_of(indices[i], rb_cRange) == Qtrue)
+      return true;
+  }
+
+  return false;
+}
+
+/*
  * Get the element of a matrix at the given index
  */
 VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
-
-  size_t index = get_index(nmat, argv);
 
   switch(nmat->stype){
     case nm_dense:
@@ -1931,49 +2006,146 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
       switch (nmat->dtype) {
         case nm_bool:
         {
-          bool* elements = (bool*)nmat->elements;
-          bool val = elements[index];
-          return (val ? Qtrue : Qfalse);
+          if(is_slice(nmat, argv)) {
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, argv, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else {
+            size_t index = get_index(nmat, argv);
+
+            bool* elements = (bool*)nmat->elements;
+            bool val = elements[index];
+            return (val ? Qtrue : Qfalse);
+          }
           
           break;
         }
         case nm_int:
         {
-          int* elements = (int*)nmat->elements;
-          int val = elements[index];
-          return INT2NUM(val);
+          if(is_slice(nmat, argv)) {
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, argv, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else {
+            size_t index = get_index(nmat, argv);
+
+            int* elements = (int*)nmat->elements;
+            int val = elements[index];
+            return INT2NUM(val);
+          }
           
           break;
         }
         case nm_float64:
         {
-          double* elements = (double*)nmat->elements;
-          double val = elements[index];
-          return DBL2NUM(val);
+          if(is_slice(nmat, argv)) {
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, argv, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else {
+            size_t index = get_index(nmat, argv);
+          
+            double* elements = (double*)nmat->elements;
+            double val = elements[index];
+            return DBL2NUM(val);
+            //return a value
+          }
 
           break;
         }
         case nm_float32:
         {
-          float* elements = (float*)nmat->elements;
-          float val = elements[index];
-          return DBL2NUM(val);
+          if(is_slice(nmat, argv)) {
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, argv, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else {
+            size_t index = get_index(nmat, argv);
+
+            float* elements = (float*)nmat->elements;
+            float val = elements[index];
+            return DBL2NUM(val);
+          }
           
           break;
         }
         case nm_complex32:
         {
-          float complex* elements = (float complex*)nmat->elements;
-          float complex val = elements[index];
-          return rb_complex_new(DBL2NUM(creal(val)), DBL2NUM(cimag(val)));
+          if(is_slice(nmat, argv)) {
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, argv, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else {
+            size_t index = get_index(nmat, argv);
+
+            float complex* elements = (float complex*)nmat->elements;
+            float complex val = elements[index];
+            return rb_complex_new(DBL2NUM(creal(val)), DBL2NUM(cimag(val)));
+          }
           
           break;
         }
         case nm_complex64:
         {
-          double complex* elements = (double complex*)nmat->elements;
-          double complex val = elements[index];
-          return rb_complex_new(DBL2NUM(creal(val)), DBL2NUM(cimag(val)));
+          if(is_slice(nmat, argv)) {
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, argv, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else {
+            size_t index = get_index(nmat, argv);
+
+            double complex* elements = (double complex*)nmat->elements;
+            double complex val = elements[index];
+            return rb_complex_new(DBL2NUM(creal(val)), DBL2NUM(cimag(val)));
+          }
           
           break;
         }
@@ -1985,6 +2157,8 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
       switch(nmat->dtype){
         case nm_float64:
         {
+          size_t index = get_index(nmat, argv);
+
           double* elements = (double*)nmat->sp->csr->elements;
           double val = elements[index];
           return DBL2NUM(val);
