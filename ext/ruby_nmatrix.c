@@ -251,6 +251,7 @@ VALUE nm_lu_solve(VALUE self, VALUE rhs_val);
 VALUE nm_svd(VALUE self);
 VALUE nm_svdvals(VALUE self);
 VALUE nm_diagsvd(VALUE self);
+  
 VALUE nm_orth(VALUE self);
 VALUE nm_cholesky(VALUE self);
 VALUE nm_cholesky_solve(VALUE self);
@@ -1927,22 +1928,51 @@ void get_slice(nmatrix* nmat, VALUE* indices, nmatrix* slice){
     then use them to fill up the elements
   */
 
-  int slice_count = 0, slice_ndims = 0;
+  size_t slice_count = 1, slice_ndims = 0;
 
   //std::pair<int, int> parsed_indices[nmat->ndims];
   for(size_t i = 0; i < nmat->ndims; ++i){
     //take each indices value and parse it
     //to get the corr start and end index of the range
 
+    size_t a1, b1;
+
+    if(rb_obj_is_kind_of(indices[i], rb_cRange) == Qtrue) {
+
+      VALUE range_begin = rb_funcall(indices[i], rb_intern("begin"), 0);
+      VALUE range_end = rb_funcall(indices[i], rb_intern("end"), 0);
+      VALUE exclude_end = rb_funcall(indices[i], rb_intern("exclude_end?"), 0);
+
+      a1 = NUM2SIZET(range_begin);
+      b1 = NUM2SIZET(range_end);
+
+      if(exclude_end == Qtrue) {
+        b1--;
+      }
+
+    }
+    else {
+      a1 = b1 = NUM2SIZET(indices[i]);
+    }
+
     //if range len is > 1, then inc slice_ndims by 1
     //and slice_count would be prod of all ranges len
-    
-    //indices[i];
+    if(b1 - a1 > 0) {
+      slice_ndims++;
+      slice_count *= (b1 - a1 + 1);
+    }
+
+    //rb_p(SIZET2NUM(a1));
+    //rb_p(SIZET2NUM(b1));
   }
 
   slice->count = slice_count;
   slice->ndims = slice_ndims;
   slice->shape = ALLOC_N(size_t, slice->ndims);
+
+
+  //mark elements that are inside the slice
+  //and copy them to elements array of slice
 
   switch (nmat->dtype) {
     case nm_bool:
