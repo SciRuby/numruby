@@ -2009,7 +2009,7 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
 
   VALUE* state_array = ALLOC_N(VALUE, nmat->ndims);
   for(size_t i = 0; i < nmat->ndims; ++i){
-    state_array[i] = INT2NUM(0);
+    state_array[i] = SIZET2NUM(lower[i]);
   }
 
   switch (nmat->dtype){
@@ -2025,15 +2025,15 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-          if(curr_index_value == nmat->shape[state_index] - 1){
-            curr_index_value = 0;
-            state_array[state_index] = INT2NUM(curr_index_value);
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{
             curr_index_value++;
-            state_array[state_index] = INT2NUM(curr_index_value);
+            state_array[state_index] = SIZET2NUM(curr_index_value);
             break;
           }  
 
@@ -2056,15 +2056,15 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-          if(curr_index_value == nmat->shape[state_index] - 1){
-            curr_index_value = 0;
-            state_array[state_index] = INT2NUM(curr_index_value);
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{
             curr_index_value++;
-            state_array[state_index] = INT2NUM(curr_index_value);
+            state_array[state_index] = SIZET2NUM(curr_index_value);
             break;
           }  
 
@@ -2087,15 +2087,15 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-          if(curr_index_value == nmat->shape[state_index] - 1){
-            curr_index_value = 0;
-            state_array[state_index] = INT2NUM(curr_index_value);
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{
             curr_index_value++;
-            state_array[state_index] = INT2NUM(curr_index_value);
+            state_array[state_index] = SIZET2NUM(curr_index_value);
             break;
           }  
 
@@ -2118,15 +2118,15 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-          if(curr_index_value == nmat->shape[state_index] - 1){
-            curr_index_value = 0;
-            state_array[state_index] = INT2NUM(curr_index_value);
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{
             curr_index_value++;
-            state_array[state_index] = INT2NUM(curr_index_value);
+            state_array[state_index] = SIZET2NUM(curr_index_value);
             break;
           }  
 
@@ -2149,15 +2149,15 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-          if(curr_index_value == nmat->shape[state_index] - 1){
-            curr_index_value = 0;
-            state_array[state_index] = INT2NUM(curr_index_value);
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{
             curr_index_value++;
-            state_array[state_index] = INT2NUM(curr_index_value);
+            state_array[state_index] = SIZET2NUM(curr_index_value);
             break;
           }  
 
@@ -2180,15 +2180,15 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-          if(curr_index_value == nmat->shape[state_index] - 1){
-            curr_index_value = 0;
-            state_array[state_index] = INT2NUM(curr_index_value);
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{
             curr_index_value++;
-            state_array[state_index] = INT2NUM(curr_index_value);
+            state_array[state_index] = SIZET2NUM(curr_index_value);
             break;
           }  
 
