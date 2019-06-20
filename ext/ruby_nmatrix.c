@@ -1903,7 +1903,7 @@ void get_stride(nmatrix* nmat, size_t* stride){
 
 size_t get_index(nmatrix* nmat, VALUE* indices){
   size_t index = 0;
-  size_t* stride = (size_t*)calloc(nmat->ndims, sizeof(size_t));
+  size_t* stride = ALLOC_N(size_t, nmat->ndims);
   get_stride(nmat, stride);
   for(size_t i = 0; i < nmat->ndims; ++i){
 
@@ -1918,10 +1918,60 @@ size_t get_index(nmatrix* nmat, VALUE* indices){
 }
 
 /*
+ * converts Range objects to corresponding
+ * lower limt and upper limit and put them in size_t varibles
+ */
+void parse_ranges(nmatrix* nmat, VALUE* indices, size_t* lower, size_t* upper){
+
+  for(size_t i = 0; i < nmat->ndims; ++i) {
+    //take each indices value and parse it
+    //to get the corr start and end index of the range
+
+    size_t a1, b1;
+
+    if(rb_obj_is_kind_of(indices[i], rb_cRange) == Qtrue){
+
+      VALUE range_begin = rb_funcall(indices[i], rb_intern("begin"), 0);
+      VALUE range_end = rb_funcall(indices[i], rb_intern("end"), 0);
+      VALUE exclude_end = rb_funcall(indices[i], rb_intern("exclude_end?"), 0);
+
+      a1 = NUM2SIZET(range_begin);
+      if(range_end == Qnil){ //end-less range
+        //assign (size_of_dim - 1) to b1
+        b1 = NUM2SIZET(nmat->shape[i]) - 1;
+      }
+      else{
+        b1 = NUM2SIZET(range_end);
+      }
+      
+
+      if(exclude_end == Qtrue && range_end != Qnil){
+        b1--;
+      }
+
+    }
+    else{
+      a1 = b1 = NUM2SIZET(indices[i]);
+    }
+
+    if(a1 > b1){
+      //raise invalid range error
+    }
+
+    if(a1 >= nmat->shape[i] || b1 >= nmat->shape[i]){
+      //raise index out of bounds error
+    }
+
+    lower[i] = a1, upper[i] = b1;
+  }
+
+}
+
+/*
  *
  *
  */
-void get_slice(nmatrix* nmat, VALUE* indices, nmatrix* slice){
+void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
   /*
     parse the indices to form ranges for C loops
 
@@ -1930,78 +1980,223 @@ void get_slice(nmatrix* nmat, VALUE* indices, nmatrix* slice){
 
   size_t slice_count = 1, slice_ndims = 0;
 
-  //std::pair<int, int> parsed_indices[nmat->ndims];
   for(size_t i = 0; i < nmat->ndims; ++i){
-    //take each indices value and parse it
-    //to get the corr start and end index of the range
-
-    size_t a1, b1;
-
-    if(rb_obj_is_kind_of(indices[i], rb_cRange) == Qtrue) {
-
-      VALUE range_begin = rb_funcall(indices[i], rb_intern("begin"), 0);
-      VALUE range_end = rb_funcall(indices[i], rb_intern("end"), 0);
-      VALUE exclude_end = rb_funcall(indices[i], rb_intern("exclude_end?"), 0);
-
-      a1 = NUM2SIZET(range_begin);
-      b1 = NUM2SIZET(range_end);
-
-      if(exclude_end == Qtrue) {
-        b1--;
-      }
-
-    }
-    else {
-      a1 = b1 = NUM2SIZET(indices[i]);
-    }
+    size_t a1 = lower[i], b1 = upper[i];
 
     //if range len is > 1, then inc slice_ndims by 1
     //and slice_count would be prod of all ranges len
-    if(b1 - a1 > 0) {
+    if(b1 - a1 > 0){
       slice_ndims++;
       slice_count *= (b1 - a1 + 1);
     }
-
-    //rb_p(SIZET2NUM(a1));
-    //rb_p(SIZET2NUM(b1));
   }
 
   slice->count = slice_count;
   slice->ndims = slice_ndims;
   slice->shape = ALLOC_N(size_t, slice->ndims);
 
+  size_t slice_ind = 0;
+  for(size_t i = 0; i < nmat->ndims; ++i){
+    size_t dim_length = (upper[i] - lower[i] + 1);
+    if(dim_length == 1)
+      continue;
+    slice->shape[slice_ind++] = dim_length;
+  }
+
 
   //mark elements that are inside the slice
   //and copy them to elements array of slice
 
-  switch (nmat->dtype) {
+  VALUE* state_array = ALLOC_N(VALUE, nmat->ndims);
+  for(size_t i = 0; i < nmat->ndims; ++i){
+    state_array[i] = INT2NUM(0);
+  }
+
+  switch (nmat->dtype){
     case nm_bool:
     {
-      
+      bool* nmat_elements = (bool*)nmat->elements;
+
+      bool* slice_elements = ALLOC_N(bool, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+
+          if(curr_index_value == nmat->shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = INT2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = INT2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
       break;
     }
     case nm_int:
     {
-      
+      int* nmat_elements = (int*)nmat->elements;
+
+      int* slice_elements = ALLOC_N(int, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+
+          if(curr_index_value == nmat->shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = INT2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = INT2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
       break;
     }
     case nm_float64:
     {
-      double* elements = (double*)nmat->elements;
+      double* nmat_elements = (double*)nmat->elements;
 
+      double* slice_elements = ALLOC_N(double, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+
+          if(curr_index_value == nmat->shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = INT2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = INT2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
       break;
     }
     case nm_float32:
     {
-      
+      float* nmat_elements = (float*)nmat->elements;
+
+      float* slice_elements = ALLOC_N(float, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+
+          if(curr_index_value == nmat->shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = INT2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = INT2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
       break;
     }
     case nm_complex32:
     {
+      float complex* nmat_elements = (float complex*)nmat->elements;
+
+      float complex* slice_elements = ALLOC_N(float complex, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+
+          if(curr_index_value == nmat->shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = INT2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = INT2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
       break;
     }
     case nm_complex64:
     {
+      double complex* nmat_elements = (double complex*)nmat->elements;
+
+      double complex* slice_elements = ALLOC_N(double complex, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          int32_t curr_index_value = NUM2INT(state_array[state_index]);
+
+          if(curr_index_value == nmat->shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = INT2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = INT2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
       break;
     }
   }
@@ -2030,25 +2225,30 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
 
+  size_t* lower_indices = ALLOC_N(size_t, nmat->ndims);
+  size_t* upper_indices = ALLOC_N(size_t, nmat->ndims);
+
+  parse_ranges(nmat, argv, lower_indices, upper_indices);
+
   switch(nmat->stype){
     case nm_dense:
     {
-      switch (nmat->dtype) {
+      switch (nmat->dtype){
         case nm_bool:
         {
-          if(is_slice(nmat, argv)) {
+          if(is_slice(nmat, argv)){
 
             nmatrix* slice = ALLOC(nmatrix);
             slice->dtype = nmat->dtype;
             slice->stype = nmat->stype;
 
-            get_slice(nmat, argv, slice);
+            get_slice(nmat, lower_indices, upper_indices, slice);
 
             return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
 
             //return a slice
           }
-          else {
+          else{
             size_t index = get_index(nmat, argv);
 
             bool* elements = (bool*)nmat->elements;
@@ -2060,19 +2260,19 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
         }
         case nm_int:
         {
-          if(is_slice(nmat, argv)) {
+          if(is_slice(nmat, argv)){
 
             nmatrix* slice = ALLOC(nmatrix);
             slice->dtype = nmat->dtype;
             slice->stype = nmat->stype;
 
-            get_slice(nmat, argv, slice);
+            get_slice(nmat, lower_indices, upper_indices, slice);
 
             return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
 
             //return a slice
           }
-          else {
+          else{
             size_t index = get_index(nmat, argv);
 
             int* elements = (int*)nmat->elements;
@@ -2084,44 +2284,43 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
         }
         case nm_float64:
         {
-          if(is_slice(nmat, argv)) {
+          if(is_slice(nmat, argv)){
 
             nmatrix* slice = ALLOC(nmatrix);
             slice->dtype = nmat->dtype;
             slice->stype = nmat->stype;
 
-            get_slice(nmat, argv, slice);
+            get_slice(nmat, lower_indices, upper_indices, slice);
 
             return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
 
             //return a slice
           }
-          else {
+          else{
             size_t index = get_index(nmat, argv);
           
             double* elements = (double*)nmat->elements;
             double val = elements[index];
             return DBL2NUM(val);
-            //return a value
           }
 
           break;
         }
         case nm_float32:
         {
-          if(is_slice(nmat, argv)) {
+          if(is_slice(nmat, argv)){
 
             nmatrix* slice = ALLOC(nmatrix);
             slice->dtype = nmat->dtype;
             slice->stype = nmat->stype;
 
-            get_slice(nmat, argv, slice);
+            get_slice(nmat, lower_indices, upper_indices, slice);
 
             return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
 
             //return a slice
           }
-          else {
+          else{
             size_t index = get_index(nmat, argv);
 
             float* elements = (float*)nmat->elements;
@@ -2133,19 +2332,19 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
         }
         case nm_complex32:
         {
-          if(is_slice(nmat, argv)) {
+          if(is_slice(nmat, argv)){
 
             nmatrix* slice = ALLOC(nmatrix);
             slice->dtype = nmat->dtype;
             slice->stype = nmat->stype;
 
-            get_slice(nmat, argv, slice);
+            get_slice(nmat, lower_indices, upper_indices, slice);
 
             return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
 
             //return a slice
           }
-          else {
+          else{
             size_t index = get_index(nmat, argv);
 
             float complex* elements = (float complex*)nmat->elements;
@@ -2157,19 +2356,19 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
         }
         case nm_complex64:
         {
-          if(is_slice(nmat, argv)) {
+          if(is_slice(nmat, argv)){
 
             nmatrix* slice = ALLOC(nmatrix);
             slice->dtype = nmat->dtype;
             slice->stype = nmat->stype;
 
-            get_slice(nmat, argv, slice);
+            get_slice(nmat, lower_indices, upper_indices, slice);
 
             return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
 
             //return a slice
           }
-          else {
+          else{
             size_t index = get_index(nmat, argv);
 
             double complex* elements = (double complex*)nmat->elements;
@@ -2187,13 +2386,18 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
       switch(nmat->dtype){
         case nm_float64:
         {
-          size_t index = get_index(nmat, argv);
+          if(is_slice(nmat, argv)){
+            //raise not implemented error
+          }
+          else{
+            size_t index = get_index(nmat, argv);
 
-          double* elements = (double*)nmat->sp->csr->elements;
-          double val = elements[index];
-          return DBL2NUM(val);
-          
-          break;
+            double* elements = (double*)nmat->sp->csr->elements;
+            double val = elements[index];
+            return DBL2NUM(val);
+            
+            break;
+          }
         }
       }
       break;
@@ -2216,7 +2420,7 @@ VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self){
   switch(nmat->stype){
     case nm_dense:
     {
-      switch (nmat->dtype) {
+      switch (nmat->dtype){
         case nm_bool:
         {
           bool* elements = (bool*)nmat->elements;
