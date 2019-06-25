@@ -178,12 +178,25 @@ VALUE nm_get_shape(VALUE self);
 VALUE nm_alloc(VALUE klass);
 void nm_free(nmatrix* mat);
 
+VALUE nm_each(VALUE self);
+VALUE nm_each_with_indices(VALUE self);
+//VALUE nm_each_stored_with_indices(VALUE self);
+//VALUE nm_each_ordered_stored_with_indices(VALUE self);
+//VALUE nm_map_stored(VALUE self);
+VALUE nm_each_row(VALUE self);
+VALUE nm_each_column(VALUE self);
+//VALUE nm_each_rank(VALUE self);
+//VALUE nm_each_layer(VALUE self);
+
+//VALUE nm_get_row(VALUE self, VALUE row_number);
+//VALUE nm_get_column(VALUE self, VALUE column_number);
+
 VALUE nm_eqeq(VALUE self, VALUE another);
 VALUE nm_gt(  VALUE self, VALUE another);
 VALUE nm_gteq(VALUE self, VALUE another);
 VALUE nm_lt(  VALUE self, VALUE another);
 VALUE nm_lteq(VALUE self, VALUE another);
-VALUE nm_add(VALUE self, VALUE another);
+VALUE nm_add( VALUE self, VALUE another);
 
 #define DECL_ELEMENTWISE_RUBY_ACCESSOR(name)    VALUE nm_##name(VALUE self, VALUE another);
 
@@ -238,6 +251,7 @@ VALUE nm_lu_solve(VALUE self, VALUE rhs_val);
 VALUE nm_svd(VALUE self);
 VALUE nm_svdvals(VALUE self);
 VALUE nm_diagsvd(VALUE self);
+  
 VALUE nm_orth(VALUE self);
 VALUE nm_cholesky(VALUE self);
 VALUE nm_cholesky_solve(VALUE self);
@@ -267,7 +281,7 @@ VALUE nm_sparse_to_array(VALUE self);
  * Sparse matrix to NMatrix
  *
  * @return NMatrix
-*/
+ */
 VALUE nm_sparse_to_nmatrix(VALUE self);
 
 void get_dense_from_coo(const double* data, const size_t rows,
@@ -335,11 +349,23 @@ void Init_nmatrix() {
 
   // Instance Methods
   rb_define_method(NMatrix, "initialize", nmatrix_init, -1);
-  rb_define_method(NMatrix, "dim",      nm_get_dim, -1);
+  rb_define_method(NMatrix, "dim",      nm_get_dim, 0);
   rb_define_method(NMatrix, "shape",    nm_get_shape, 0);
   rb_define_method(NMatrix, "elements", nm_get_elements, 0);
   rb_define_method(NMatrix, "dtype",    nm_get_dtype, 0);
   rb_define_method(NMatrix, "stype",    nm_get_stype, 0);
+
+  // Iterators Methods
+  rb_define_method(NMatrix, "each", nm_each, 0);
+  rb_define_method(NMatrix, "each_with_indices", nm_each_with_indices, 0);
+  //rb_define_method(NMatrix, "each_stored_with_indices", nm_each_stored_with_indices, 0);
+  //rb_define_method(NMatrix, "map_stored", nm_map_stored, 0);
+  //rb_define_method(NMatrix, "each_ordered_stored_with_indices", nm_each_ordered_stored_with_indices, 0);
+  rb_define_method(NMatrix, "each_row", nm_each_row, 0);
+  rb_define_method(NMatrix, "each_column", nm_each_column, 0);
+
+  //rb_define_method(NMatrix, "row", nm_get_row, 1);
+  //rb_define_method(NMatrix, "column", nm_get_column, 1);
 
   rb_define_method(NMatrix, "==", nm_eqeq, 1);
   rb_define_method(NMatrix, ">",  nm_gt,   1);
@@ -401,7 +427,7 @@ void Init_nmatrix() {
 
   rb_define_method(NMatrix, "[]", nm_accessor_get, -1);
   rb_define_method(NMatrix, "[]=", nm_accessor_set, -1);
-  rb_define_method(NMatrix, "row", nm_get_rank, 1);
+  rb_define_method(NMatrix, "rank", nm_get_rank, 1);
   rb_define_method(NMatrix, "dtype", nm_get_dtype, 0);
   // rb_define_method(NMatrix, "inspect", nm_inspect, 0);
 }
@@ -424,7 +450,7 @@ VALUE constant_nmatrix(int argc, VALUE* argv, double constant){
   nmatrix* mat = ALLOC(nmatrix);
   mat->stype = nm_dense;
   mat->dtype = nm_float64;
-  mat->ndims = 2;
+  mat->ndims = (size_t)RARRAY_LEN(argv[0]);
   mat->count = 1;
   mat->shape = ALLOC_N(size_t, mat->ndims);
   for (size_t index = 0; index < mat->ndims; index++) {
@@ -467,7 +493,7 @@ VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
   Data_Get_Struct(self, nmatrix, mat);
 
   if(argc > 0){
-    mat->ndims = 2;
+    mat->ndims = (size_t)RARRAY_LEN(argv[0]);
     mat->count = 1;
     mat->shape = ALLOC_N(size_t, mat->ndims);
     for (size_t index = 0; index < mat->ndims; index++) {
@@ -598,7 +624,11 @@ void nm_free(nmatrix* mat){
 
 // Returns number of dimensions of matrix
 VALUE nm_get_dim(VALUE self){
-  return INT2NUM(2);
+  nmatrix* input;
+
+  Data_Get_Struct(self, nmatrix, input);
+
+  return INT2NUM(input->ndims);
 }
 
 // Returns a flat list(one dimensional array) of elements values of matrix
@@ -730,6 +760,375 @@ VALUE nm_get_stype(VALUE self){
   Data_Get_Struct(self, nmatrix, nmat);
 
   return ID2SYM(rb_intern(STYPE_NAMES[nmat->stype]));
+}
+
+VALUE nm_each(VALUE self) {
+  nmatrix* input;
+  Data_Get_Struct(self, nmatrix, input);
+
+  switch(input->stype){
+    case nm_dense:
+    {
+      switch (input->dtype) {
+        case nm_bool:
+        {
+          bool* elements = (bool*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(elements[index] ? Qtrue : Qfalse);
+          }
+          break;
+        }
+        case nm_int:
+        {
+          int* elements = (int*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(INT2NUM(elements[index]));
+          }
+          break;
+        }
+        case nm_float64:
+        {
+          double* elements = (double*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(DBL2NUM(elements[index]));
+          }
+          break;
+        }
+        case nm_float32:
+        {
+          float* elements = (float*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(DBL2NUM(elements[index]));
+          }
+          break;
+        }
+        case nm_complex32:
+        {
+          float complex* elements = (float complex*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index]))));
+          }
+          break;
+        }
+        case nm_complex64:
+        {
+          double complex* elements = (double complex*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index]))));
+          }
+          break;
+        }
+      }
+      break;
+    }
+    case nm_sparse: //this is to be modified later during sparse work
+    {
+      switch(input->dtype){
+        case nm_float64:
+        {
+          double* elements = (double*)input->sp->csr->elements;
+          for (size_t index = 0; input->sp->csr->count; index++){
+            rb_yield(DBL2NUM(elements[index]));
+          }
+          break;
+        }
+      }
+      break;
+    }
+  }
+
+  return self;
+}
+
+void increment_state(VALUE* state_array, VALUE* shape_array, size_t ndims) {
+
+  for (size_t index = ndims; index > 0; index--) {
+    int curr_dim_index = (int)NUM2INT(state_array[index]);
+    int curr_dim_length = (int)NUM2INT(shape_array[index - 1]);
+
+    if (curr_dim_index + 1 == curr_dim_length) {
+      curr_dim_index = 0;
+      state_array[index] = INT2NUM(curr_dim_index);
+    } else {
+      curr_dim_index++;
+      state_array[index] = INT2NUM(curr_dim_index);
+      break;
+    }
+
+  }
+}
+
+VALUE nm_each_with_indices(VALUE self) {
+  nmatrix* input;
+  Data_Get_Struct(self, nmatrix, input);
+
+  VALUE* shape_array = ALLOC_N(VALUE, input->ndims);
+  for (size_t index = 0; index < input->ndims; index++){
+    shape_array[index] = LONG2NUM(input->shape[index]);
+  }
+
+
+  //state_array will store the value and indices
+  //of current element during iteration
+  VALUE* state_array = ALLOC_N(VALUE, input->ndims + 1);
+  state_array[0] = -1;  //initialized below inside switch
+  for (size_t index = 1; index < input->ndims + 1; index++){
+    state_array[index] = INT2NUM(0);
+  }
+
+  switch(input->stype){
+    case nm_dense:
+    {
+      switch (input->dtype) {
+        case nm_bool:
+        {
+          bool* elements = (bool*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+
+            state_array[0] = (elements[index] ? Qtrue : Qfalse);
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
+          }
+          break;
+        }
+        case nm_int:
+        {
+          int* elements = (int*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+
+            state_array[0] = INT2NUM(elements[index]);
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
+          }
+          break;
+        }
+        case nm_float64:
+        {
+          double* elements = (double*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+
+            state_array[0] = DBL2NUM(elements[index]);
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
+          }
+          break;
+        }
+        case nm_float32:
+        {
+          float* elements = (float*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+
+            state_array[0] = DBL2NUM(elements[index]);
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
+          }
+          break;
+        }
+        case nm_complex32:
+        {
+          float complex* elements = (float complex*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+
+            state_array[0] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
+          }
+          break;
+        }
+        case nm_complex64:
+        {
+          double complex* elements = (double complex*)input->elements;
+          for (size_t index = 0; index < input->count; index++){
+
+            state_array[0] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
+          }
+          break;
+        }
+      }
+      break;
+    }
+    case nm_sparse: //this is to be modified later during sparse work
+    {
+      switch(input->dtype){
+        case nm_float64:
+        {
+          double* elements = (double*)input->sp->csr->elements;
+          for (size_t index = 0; index < input->sp->csr->count; index++){
+
+            state_array[0] = DBL2NUM(elements[index]);
+
+            rb_yield(rb_ary_new4(input->ndims + 1, state_array));
+
+            increment_state(state_array, shape_array, input->ndims);
+          }
+          break;
+        }
+      }
+      break;
+    }
+  }
+
+  return self;
+}
+
+VALUE nm_each_stored_with_indices(VALUE self) {
+  return Qnil;
+}
+
+VALUE nm_each_ordered_stored_with_indices(VALUE self) {
+  return Qnil;
+}
+
+VALUE nm_map_stored(VALUE self) {
+  return Qnil;
+}
+
+VALUE nm_each_row(VALUE self) {
+  nmatrix* input;
+  Data_Get_Struct(self, nmatrix, input);
+
+  VALUE* curr_row = ALLOC_N(VALUE, input->shape[1]);
+  for (size_t index = 0; index < input->shape[1]; index++){
+    curr_row[index] = INT2NUM(0);
+  }
+
+  switch(input->stype){
+    case nm_dense:
+    {
+      switch (input->dtype) {
+        case nm_bool:
+        {
+          bool* elements = (bool*)input->elements;
+          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
+
+          	for (size_t index = 0; index < input->shape[1]; index++){
+          		curr_row[index] = elements[(row_index * input->shape[1]) + index] ? Qtrue : Qfalse;
+          	}
+          	//rb_yield(DBL2NUM(elements[row_index]));
+          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
+          }
+          break;
+        }
+        case nm_int:
+        {
+          int* elements = (int*)input->elements;
+          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
+
+          	for (size_t index = 0; index < input->shape[1]; index++){
+          		curr_row[index] = INT2NUM(elements[(row_index * input->shape[1]) + index]);
+          	}
+          	//rb_yield(DBL2NUM(elements[row_index]));
+          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
+          }
+          break;
+        }
+        case nm_float64:
+        {
+          double* elements = (double*)input->elements;
+          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
+
+          	for (size_t index = 0; index < input->shape[1]; index++){
+          		curr_row[index] = DBL2NUM(elements[(row_index * input->shape[1]) + index]);
+          	}
+          	//rb_yield(DBL2NUM(elements[row_index]));
+          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
+          }
+
+          break;
+        }
+        case nm_float32:
+        {
+          float* elements = (float*)input->elements;
+          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
+
+          	for (size_t index = 0; index < input->shape[1]; index++){
+          		curr_row[index] = DBL2NUM(elements[(row_index * input->shape[1]) + index]);
+          	}
+          	//rb_yield(DBL2NUM(elements[row_index]));
+          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
+          }
+          for (size_t index = 0; index < input->count; index++){
+            rb_yield(DBL2NUM(elements[index]));
+          }
+          break;
+        }
+        case nm_complex32:
+        {
+          float complex* elements = (float complex*)input->elements;
+          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
+
+          	for (size_t index = 0; index < input->shape[1]; index++){
+          		curr_row[index] = DBL2NUM(creal(elements[(row_index * input->shape[1]) + index])), DBL2NUM(cimag(elements[(row_index * input->shape[1]) + index]));
+          	}
+          	//rb_yield(DBL2NUM(elements[row_index]));
+          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
+          }
+          break;
+        }
+        case nm_complex64:
+        {
+          double complex* elements = (double complex*)input->elements;
+          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
+
+          	for (size_t index = 0; index < input->shape[1]; index++){
+          		curr_row[index] = DBL2NUM(creal(elements[(row_index * input->shape[1]) + index])), DBL2NUM(cimag(elements[(row_index * input->shape[1]) + index]));
+          	}
+          	//rb_yield(DBL2NUM(elements[row_index]));
+          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
+          }
+          break;
+        }
+      }
+      break;
+    }
+    case nm_sparse: //this is to be modified later during sparse work
+    {
+      switch(input->dtype){
+        case nm_float64:
+        {
+          double* elements = (double*)input->sp->csr->elements;
+          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
+
+          	for (size_t index = 0; index < input->shape[1]; index++){
+          		curr_row[index] = DBL2NUM(elements[(row_index * input->shape[1]) + index]);
+          	}
+          	//rb_yield(DBL2NUM(elements[row_index]));
+          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
+          }
+          break;
+        }
+      }
+      break;
+    }
+  }
+
+  return self;
+}
+
+VALUE nm_each_column(VALUE self) {
+  return Qnil;
+}
+
+VALUE nm_each_rank(VALUE self) {
+  return Qnil;
+}
+
+VALUE nm_each_layer(VALUE self) {
+  return Qnil;
 }
 
 /*
@@ -1485,17 +1884,528 @@ DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(floor, floor)
 DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(ceil, ceil)
 
 /*
+ *  Calculates stride using matrix shape array.
+ *  Used by get_index to calculate index in flat list of elements
+ */
+
+void get_stride(nmatrix* nmat, size_t* stride){
+  size_t val = 1;
+  for(int i = (nmat->ndims)-1; i >= 0; --i){ //using int here instead of size_t
+    stride[i] = val;                         //because size_t does not support
+    val *= nmat->shape[i];                    //decrement operator
+  }
+} 
+
+/*
+ *  Calculates index in flat list of elements (stored in backend)
+ *  from the given comma separated indices
+ */
+
+size_t get_index(nmatrix* nmat, VALUE* indices){
+  size_t index = 0;
+  size_t* stride = ALLOC_N(size_t, nmat->ndims);
+  get_stride(nmat, stride);
+  for(size_t i = 0; i < nmat->ndims; ++i){
+
+    if((size_t)FIX2LONG(indices[i]) >= nmat->shape[i] ||
+          (int)FIX2LONG(indices[i]) < 0) {  //index out of bounds
+      rb_raise(rb_eIndexError, "IndexError: index is out of bounds.");
+    }
+
+    index += ((size_t)FIX2LONG(indices[i]) * stride[i]);
+  }
+  return index;
+}
+
+/*
+ * converts Range objects to corresponding
+ * lower limt and upper limit and put them in size_t varibles
+ */
+void parse_ranges(nmatrix* nmat, VALUE* indices, size_t* lower, size_t* upper){
+
+  for(size_t i = 0; i < nmat->ndims; ++i) {
+    //take each indices value and parse it
+    //to get the corr start and end index of the range
+
+    size_t a1, b1;
+
+    if(rb_obj_is_kind_of(indices[i], rb_cRange) == Qtrue){
+
+      VALUE range_begin = rb_funcall(indices[i], rb_intern("begin"), 0);
+      VALUE range_end = rb_funcall(indices[i], rb_intern("end"), 0);
+      VALUE exclude_end = rb_funcall(indices[i], rb_intern("exclude_end?"), 0);
+
+      a1 = NUM2SIZET(range_begin);
+      if(range_end == Qnil){ //end-less range
+        //assign (size_of_dim - 1) to b1
+        b1 = NUM2SIZET(nmat->shape[i]) - 1;
+      }
+      else{
+        b1 = NUM2SIZET(range_end);
+      }
+      
+
+      if(exclude_end == Qtrue && range_end != Qnil){
+        b1--;
+      }
+
+    }
+    else{
+      a1 = b1 = NUM2SIZET(indices[i]);
+    }
+
+    if(a1 > b1){
+      //raise invalid range error
+    }
+
+    if(a1 >= nmat->shape[i] || b1 >= nmat->shape[i]){
+      //raise index out of bounds error
+    }
+
+    lower[i] = a1, upper[i] = b1;
+  }
+
+}
+
+/*
+ *
+ *
+ */
+void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
+  /*
+    parse the indices to form ranges for C loops
+
+    then use them to fill up the elements
+  */
+
+  size_t slice_count = 1, slice_ndims = 0;
+
+  for(size_t i = 0; i < nmat->ndims; ++i){
+    size_t a1 = lower[i], b1 = upper[i];
+
+    //if range len is > 1, then inc slice_ndims by 1
+    //and slice_count would be prod of all ranges len
+    if(b1 - a1 > 0){
+      slice_ndims++;
+      slice_count *= (b1 - a1 + 1);
+    }
+  }
+
+  slice->count = slice_count;
+  slice->ndims = slice_ndims;
+  slice->shape = ALLOC_N(size_t, slice->ndims);
+
+  size_t slice_ind = 0;
+  for(size_t i = 0; i < nmat->ndims; ++i){
+    size_t dim_length = (upper[i] - lower[i] + 1);
+    if(dim_length == 1)
+      continue;
+    slice->shape[slice_ind++] = dim_length;
+  }
+
+
+  //mark elements that are inside the slice
+  //and copy them to elements array of slice
+
+  VALUE* state_array = ALLOC_N(VALUE, nmat->ndims);
+  for(size_t i = 0; i < nmat->ndims; ++i){
+    state_array[i] = SIZET2NUM(lower[i]);
+  }
+
+  switch (nmat->dtype){
+    case nm_bool:
+    {
+      bool* nmat_elements = (bool*)nmat->elements;
+
+      bool* slice_elements = ALLOC_N(bool, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
+      break;
+    }
+    case nm_int:
+    {
+      int* nmat_elements = (int*)nmat->elements;
+
+      int* slice_elements = ALLOC_N(int, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
+      break;
+    }
+    case nm_float64:
+    {
+      double* nmat_elements = (double*)nmat->elements;
+
+      double* slice_elements = ALLOC_N(double, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
+      break;
+    }
+    case nm_float32:
+    {
+      float* nmat_elements = (float*)nmat->elements;
+
+      float* slice_elements = ALLOC_N(float, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* nmat_elements = (float complex*)nmat->elements;
+
+      float complex* slice_elements = ALLOC_N(float complex, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* nmat_elements = (double complex*)nmat->elements;
+
+      double complex* slice_elements = ALLOC_N(double complex, slice->count);
+
+      for(size_t i = 0; i < slice->count; ++i){
+        size_t nmat_index = get_index(nmat, state_array);
+        slice_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == upper[state_index]){
+            curr_index_value = lower[i];
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      slice->elements = slice_elements;
+      break;
+    }
+  }
+
+  //fill the nmatrix* slice with the req data
+}
+
+/*
+ *  checks if the given set of indices corresponds
+ *  to a single element or a slice.
+ *
+ */
+bool is_slice(nmatrix* nmat, VALUE* indices){
+  for(size_t i = 0; i < nmat->ndims; ++i){
+    if(rb_obj_is_kind_of(indices[i], rb_cRange) == Qtrue)
+      return true;
+  }
+
+  return false;
+}
+
+/*
  * Get the element of a matrix at the given index
  */
 VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
 
-  size_t index = (size_t)FIX2LONG(argv[0]) * nmat->shape[1] +  (size_t)FIX2LONG(argv[1]);
-  double* elements = (double*)nmat->elements;
-  double val = elements[index];
+  size_t* lower_indices = ALLOC_N(size_t, nmat->ndims);
+  size_t* upper_indices = ALLOC_N(size_t, nmat->ndims);
 
-  return DBL2NUM(val);
+  parse_ranges(nmat, argv, lower_indices, upper_indices);
+
+  switch(nmat->stype){
+    case nm_dense:
+    {
+      switch (nmat->dtype){
+        case nm_bool:
+        {
+          if(is_slice(nmat, argv)){
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, lower_indices, upper_indices, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else{
+            size_t index = get_index(nmat, argv);
+
+            bool* elements = (bool*)nmat->elements;
+            bool val = elements[index];
+            return (val ? Qtrue : Qfalse);
+          }
+          
+          break;
+        }
+        case nm_int:
+        {
+          if(is_slice(nmat, argv)){
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, lower_indices, upper_indices, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else{
+            size_t index = get_index(nmat, argv);
+
+            int* elements = (int*)nmat->elements;
+            int val = elements[index];
+            return INT2NUM(val);
+          }
+          
+          break;
+        }
+        case nm_float64:
+        {
+          if(is_slice(nmat, argv)){
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, lower_indices, upper_indices, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else{
+            size_t index = get_index(nmat, argv);
+          
+            double* elements = (double*)nmat->elements;
+            double val = elements[index];
+            return DBL2NUM(val);
+          }
+
+          break;
+        }
+        case nm_float32:
+        {
+          if(is_slice(nmat, argv)){
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, lower_indices, upper_indices, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else{
+            size_t index = get_index(nmat, argv);
+
+            float* elements = (float*)nmat->elements;
+            float val = elements[index];
+            return DBL2NUM(val);
+          }
+          
+          break;
+        }
+        case nm_complex32:
+        {
+          if(is_slice(nmat, argv)){
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, lower_indices, upper_indices, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else{
+            size_t index = get_index(nmat, argv);
+
+            float complex* elements = (float complex*)nmat->elements;
+            float complex val = elements[index];
+            return rb_complex_new(DBL2NUM(creal(val)), DBL2NUM(cimag(val)));
+          }
+          
+          break;
+        }
+        case nm_complex64:
+        {
+          if(is_slice(nmat, argv)){
+
+            nmatrix* slice = ALLOC(nmatrix);
+            slice->dtype = nmat->dtype;
+            slice->stype = nmat->stype;
+
+            get_slice(nmat, lower_indices, upper_indices, slice);
+
+            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+
+            //return a slice
+          }
+          else{
+            size_t index = get_index(nmat, argv);
+
+            double complex* elements = (double complex*)nmat->elements;
+            double complex val = elements[index];
+            return rb_complex_new(DBL2NUM(creal(val)), DBL2NUM(cimag(val)));
+          }
+          
+          break;
+        }
+      }
+      break;
+    }
+    case nm_sparse: //this is to be modified later during sparse work
+    {
+      switch(nmat->dtype){
+        case nm_float64:
+        {
+          if(is_slice(nmat, argv)){
+            //raise not implemented error
+          }
+          else{
+            size_t index = get_index(nmat, argv);
+
+            double* elements = (double*)nmat->sp->csr->elements;
+            double val = elements[index];
+            return DBL2NUM(val);
+            
+            break;
+          }
+        }
+      }
+      break;
+    }
+  }
+
+  return DBL2NUM(-1);   //make it more descriptive
+
 }
 
 /*
@@ -1505,12 +2415,88 @@ VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self){
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
 
-  size_t index = (size_t)FIX2LONG(argv[0]) * nmat->shape[1] +  (size_t)FIX2LONG(argv[1]);
+  size_t index = get_index(nmat, argv);
 
-  double* elements = (double*)nmat->elements;
-  elements[index] = NUM2DBL(argv[2]);
+  switch(nmat->stype){
+    case nm_dense:
+    {
+      switch (nmat->dtype){
+        case nm_bool:
+        {
+          bool* elements = (bool*)nmat->elements;
+          elements[index] = RTEST(argv[nmat->ndims]);
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+        case nm_int:
+        {
+          int* elements = (int*)nmat->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+        case nm_float64:
+        {
+          double* elements = (double*)nmat->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
 
-  nmat->elements = elements;
+          nmat->elements = elements;
+          return argv[2];
+        }
+        case nm_float32:
+        {
+          float* elements = (float*)nmat->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
+
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+        case nm_complex32:
+        {
+          float complex* elements = (float complex*)nmat->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
+
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+        case nm_complex64:
+        {
+          double complex* elements = (double complex*)nmat->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
+
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+      }
+      break;
+    }
+    case nm_sparse: //this is to be modified later during sparse work
+    {
+      switch(nmat->dtype){
+        case nm_float64:
+        {
+          double* elements = (double*)nmat->sp->csr->elements;
+          elements[index] = NUM2DBL(argv[nmat->ndims]);
+          nmat->elements = elements;
+          return argv[2];
+          
+          break;
+        }
+      }
+      break;
+    }
+  }
+
   return argv[2];
 }
 
