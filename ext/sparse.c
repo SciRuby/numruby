@@ -397,63 +397,134 @@ VALUE nm_sparse_to_array(VALUE self){
 
   size_t count = input->count;
   VALUE* array = ALLOC_N(VALUE, input->count);
+
+  void* elements_t;
+  switch (input->dtype) {
+    case nm_bool:
+    {
+      elements_t = ALLOC_N(bool, count);
+      break;
+    }
+    case nm_int:
+    {
+      elements_t = ALLOC_N(int, count);
+      break;
+    }
+    case nm_float32:
+    {
+      elements_t = ALLOC_N(float, count);
+      break;
+    }
+    case nm_float64:
+    {
+      elements_t = ALLOC_N(double, count);
+      break;
+    }
+    case nm_complex32:
+    {
+      elements_t = ALLOC_N(float complex, count);
+      break;
+    }
+    case nm_complex64:
+    {
+      elements_t = ALLOC_N(double complex, count);
+      break;
+    }
+  }
+
   switch (input->sptype) {
     case coo:
     {
-      double* elements = ALLOC_N(double, count);
       get_dense_from_coo(input->coo->elements,
                         input->shape[0],
                         input->shape[1],
                         input->coo->ia,
                         input->coo->ja,
-                        elements, nm_float64);
-      for (size_t index = 0; index < count; index++){
-        array[index] = DBL2NUM(elements[index]);
-      }
+                        elements_t, input->dtype);
       break;
     }
     case csc:
     {
-      double* elements = ALLOC_N(double, count);
       get_dense_from_csc(input->csc->elements,
                         input->shape[0],
                         input->shape[1],
                         input->csc->ia,
                         input->csc->ja,
-                        elements, nm_float64);
-      for (size_t index = 0; index < count; index++){
-        array[index] = DBL2NUM(elements[index]);
-      }
+                        elements_t, nm_float64);
       break;
     }
     case csr:
     {
-      double* elements = ALLOC_N(double, count);
       get_dense_from_csr(input->csr->elements,
                         input->shape[0],
                         input->shape[1],
                         input->csr->ia,
                         input->csr->ja,
-                        elements, nm_float64);
-      for (size_t index = 0; index < count; index++){
-        array[index] = DBL2NUM(elements[index]);
-      }
+                        elements_t, nm_float64);
       break;
     }
     case dia:
     {
-      double* elements = ALLOC_N(double, count);
       get_dense_from_dia(input->diag->elements,
                         input->shape[0],
                         input->shape[1],
                         input->diag->offset,
-                        elements, nm_float64);
+                        elements_t, nm_float64);
+      break;
+    }
+  }
+
+  switch (input->dtype) {
+    case nm_bool:
+    {
+      bool* elements = elements_t;
+      for (size_t index = 0; index < count; index++){
+        array[index] = elements[index] ? Qtrue : Qfalse;
+      }
+      break;
+    }
+    case nm_int:
+    {
+      int* elements = elements_t;
+      for (size_t index = 0; index < count; index++){
+        array[index] = INT2NUM(elements[index]);
+      }
+      break;
+    }
+    case nm_float32:
+    {
+      float* elements = elements_t;
       for (size_t index = 0; index < count; index++){
         array[index] = DBL2NUM(elements[index]);
       }
       break;
     }
+    case nm_float64:
+    {
+      double* elements = elements_t;
+      for (size_t index = 0; index < count; index++){
+        array[index] = DBL2NUM(elements[index]);
+      }
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* elements = elements_t;
+      for (size_t index = 0; index < count; index++){
+        array[index] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
+      }
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* elements = elements_t;
+      for (size_t index = 0; index < count; index++){
+        array[index] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
+      }
+      break;
+    }
   }
+
   return rb_ary_new4(count, array);
 }
 
@@ -474,55 +545,87 @@ VALUE nm_sparse_to_nmatrix(VALUE self){
   result->shape[1] = input->shape[1];
   result->count = input->count;
 
+  void* elements_t;
+  switch (input->dtype) {
+    case nm_bool:
+    {
+      elements_t = ALLOC_N(bool, result->count);
+      break;
+    }
+    case nm_int:
+    {
+      elements_t = ALLOC_N(int, result->count);
+      break;
+    }
+    case nm_float32:
+    {
+      elements_t = ALLOC_N(float, result->count);
+      break;
+    }
+    case nm_float64:
+    {
+      elements_t = ALLOC_N(double, result->count);
+      break;
+    }
+    case nm_complex32:
+    {
+      elements_t = ALLOC_N(float complex, result->count);
+      break;
+    }
+    case nm_complex64:
+    {
+      elements_t = ALLOC_N(double complex, result->count);
+      break;
+    }
+  }
+
   switch (input->sptype) {
     case coo:
     {
-      double* elements = ALLOC_N(double, result->count);
       get_dense_from_coo(input->coo->elements,
                         input->shape[0],
                         input->shape[1],
                         input->coo->ia,
                         input->coo->ja,
-                        elements, nm_float64);
-      result->elements = elements;
+                        elements_t, input->dtype);
+      result->elements = elements_t;
       break;
     }
     case csc:
     {
-      double* elements = ALLOC_N(double, result->count);
       get_dense_from_csc(input->csc->elements,
                         input->shape[0],
                         input->shape[1],
                         input->csc->ia,
                         input->csc->ja,
-                        elements, nm_float64);
-      result->elements = elements;
+                        elements_t, nm_float64);
+      result->elements = elements_t;
       break;
     }
     case csr:
     {
-      double* elements = ALLOC_N(double, result->count);
       get_dense_from_csr(input->csr->elements,
                         input->shape[0],
                         input->shape[1],
                         input->csr->ia,
                         input->csr->ja,
-                        elements, nm_float64);
-      result->elements = elements;
+                        elements_t, nm_float64);
+      result->elements = elements_t;
       break;
     }
     case dia:
     {
-      double* elements = ALLOC_N(double, result->count);
       get_dense_from_dia(input->diag->elements,
                         input->shape[0],
                         input->shape[1],
                         input->diag->offset,
-                        elements, nm_float64);
-      result->elements = elements;
+                        elements_t, nm_float64);
+      result->elements = elements_t;
       break;
     }
   }
+
+
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
@@ -532,7 +635,7 @@ void get_dense_from_coo(const void* data_t, const size_t rows,
                         const size_t cols, const size_t* ia,
                         const size_t* ja, void* elements_t, nm_dtype elements_dtype){
   
-  switch(elements_dtype) {
+  switch (elements_dtype) {
     case nm_bool:
     {
       const bool* data = data_t;
@@ -632,7 +735,7 @@ void get_dense_from_csc(const void* data_t, const size_t rows,
                         const size_t cols, const size_t* ia,
                         const size_t* ja, void* elements_t, nm_dtype elements_dtype){
   
-  switch(elements_dtype) {
+  switch (elements_dtype) {
     case nm_bool:
     {
       const bool* data = data_t;
@@ -731,7 +834,7 @@ void get_dense_from_csc(const void* data_t, const size_t rows,
 void get_dense_from_csr(const void* data_t, const size_t rows,
                         const size_t cols, const size_t* ia,
                         const size_t* ja, void* elements_t, nm_dtype elements_dtype){
-  switch(elements_dtype) {
+  switch (elements_dtype) {
     case nm_bool:
     {
       const bool* data = data_t;
@@ -831,7 +934,7 @@ void get_dense_from_dia(const void* data_t, const size_t rows,
                         const size_t cols, const size_t* offset,
                         void* elements_t, nm_dtype elements_dtype){
   //TODO: complete this fuction
-  switch(elements_dtype) {
+  switch (elements_dtype) {
     case nm_bool:
     {
       const bool* data = data_t;
