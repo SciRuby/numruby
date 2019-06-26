@@ -284,18 +284,18 @@ VALUE nm_sparse_to_array(VALUE self);
  */
 VALUE nm_sparse_to_nmatrix(VALUE self);
 
-void get_dense_from_coo(const double* data, const size_t rows,
+void get_dense_from_coo(const void* data_t, const size_t rows,
                        const size_t cols, const size_t* ia,
-                       const size_t* ja, double* elements);
-void get_dense_from_csc(const double* data, const size_t rows,
+                       const size_t* ja, void* elements_t, nm_dtype);
+void get_dense_from_csc(const void* data_t, const size_t rows,
                        const size_t cols, const size_t* ia,
-                       const size_t* ja, double* elements);
-void get_dense_from_csr(const double* data, const size_t rows,
+                       const size_t* ja, void* elements_t, nm_dtype);
+void get_dense_from_csr(const void* data_t, const size_t rows,
                        const size_t cols, const size_t* ia,
-                       const size_t* ja, double* elements);
-void get_dense_from_dia(const double* data, const size_t rows,
+                       const size_t* ja, void* elements_t, nm_dtype);
+void get_dense_from_dia(const void* data_t, const size_t rows,
                        const size_t cols, const size_t* offset,
-                       double* elements);
+                       void* elements_t, nm_dtype);
 
 void Init_nmatrix() {
 
