@@ -183,10 +183,10 @@ VALUE nm_each_with_indices(VALUE self);
 //VALUE nm_each_stored_with_indices(VALUE self);
 //VALUE nm_each_ordered_stored_with_indices(VALUE self);
 //VALUE nm_map_stored(VALUE self);
+VALUE nm_each_rank(VALUE self, VALUE dimension_idx);
 VALUE nm_each_row(VALUE self);
 VALUE nm_each_column(VALUE self);
-//VALUE nm_each_rank(VALUE self);
-//VALUE nm_each_layer(VALUE self);
+VALUE nm_each_layer(VALUE self);
 
 //VALUE nm_get_row(VALUE self, VALUE row_number);
 //VALUE nm_get_column(VALUE self, VALUE column_number);
@@ -297,6 +297,11 @@ void get_dense_from_dia(const double* data, const size_t rows,
                        const size_t cols, const size_t* offset,
                        double* elements);
 
+//forwards for internally used functions
+void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice);
+size_t get_index(nmatrix* nmat, VALUE* indices);
+
+
 void Init_nmatrix() {
 
   ///////////////////////
@@ -361,6 +366,7 @@ void Init_nmatrix() {
   //rb_define_method(NMatrix, "each_stored_with_indices", nm_each_stored_with_indices, 0);
   //rb_define_method(NMatrix, "map_stored", nm_map_stored, 0);
   //rb_define_method(NMatrix, "each_ordered_stored_with_indices", nm_each_ordered_stored_with_indices, 0);
+  rb_define_method(NMatrix, "each_rank", nm_each_rank, 1);
   rb_define_method(NMatrix, "each_row", nm_each_row, 0);
   rb_define_method(NMatrix, "each_column", nm_each_column, 0);
 
@@ -997,6 +1003,46 @@ VALUE nm_map_stored(VALUE self) {
   return Qnil;
 }
 
+VALUE nm_each_rank(VALUE self, VALUE dimension_idx) {
+  nmatrix* input;
+  Data_Get_Struct(self, nmatrix, input);
+  double* input_elements = (double*)input->elements;
+
+  size_t dim_idx = NUM2SIZET(dimension_idx);
+
+  nmatrix* result = ALLOC(nmatrix);
+  result->dtype = input->dtype;
+  result->stype = input->stype;
+  result->count = (input->count / input->shape[dim_idx]);
+  result->ndims = (input->ndims) - 1;
+  result->shape = ALLOC_N(size_t, result->ndims);
+
+  for(size_t i = 0; i < result->ndims; ++i) {
+    if(i < dim_idx)
+      result->shape[i] = input->shape[i];
+    else
+      result->shape[i] = input->shape[i + 1];
+  }
+
+  size_t* lower_indices = ALLOC_N(size_t, input->ndims);
+  size_t* upper_indices = ALLOC_N(size_t, input->ndims);
+
+  for(size_t i = 0; i < input->ndims; ++i) {
+    lower_indices[i] = 0;
+    upper_indices[i] = input->shape[i] - 1;
+  }
+  lower_indices[dim_idx] = upper_indices[dim_idx] = -1;
+
+  for(size_t i = 0; i < input->shape[dim_idx]; ++i) {
+    lower_indices[dim_idx] = upper_indices[dim_idx] = i;
+    get_slice(input, lower_indices, upper_indices, result);
+
+    rb_yield(Data_Wrap_Struct(NMatrix, NULL, nm_free, result));
+  }
+
+  return self;
+}
+
 VALUE nm_each_row(VALUE self) {
   nmatrix* input;
   Data_Get_Struct(self, nmatrix, input);
@@ -1120,10 +1166,6 @@ VALUE nm_each_row(VALUE self) {
 }
 
 VALUE nm_each_column(VALUE self) {
-  return Qnil;
-}
-
-VALUE nm_each_rank(VALUE self) {
   return Qnil;
 }
 
