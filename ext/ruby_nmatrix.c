@@ -369,6 +369,7 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "each_rank", nm_each_rank, 1);
   rb_define_method(NMatrix, "each_row", nm_each_row, 0);
   rb_define_method(NMatrix, "each_column", nm_each_column, 0);
+  rb_define_method(NMatrix, "each_layer", nm_each_layer, 0);
 
   //rb_define_method(NMatrix, "row", nm_get_row, 1);
   //rb_define_method(NMatrix, "column", nm_get_column, 1);
@@ -1006,7 +1007,6 @@ VALUE nm_map_stored(VALUE self) {
 VALUE nm_each_rank(VALUE self, VALUE dimension_idx) {
   nmatrix* input;
   Data_Get_Struct(self, nmatrix, input);
-  double* input_elements = (double*)input->elements;
 
   size_t dim_idx = NUM2SIZET(dimension_idx);
 
@@ -1035,6 +1035,7 @@ VALUE nm_each_rank(VALUE self, VALUE dimension_idx) {
 
   for(size_t i = 0; i < input->shape[dim_idx]; ++i) {
     lower_indices[dim_idx] = upper_indices[dim_idx] = i;
+
     get_slice(input, lower_indices, upper_indices, result);
 
     rb_yield(Data_Wrap_Struct(NMatrix, NULL, nm_free, result));
@@ -1044,133 +1045,15 @@ VALUE nm_each_rank(VALUE self, VALUE dimension_idx) {
 }
 
 VALUE nm_each_row(VALUE self) {
-  nmatrix* input;
-  Data_Get_Struct(self, nmatrix, input);
-
-  VALUE* curr_row = ALLOC_N(VALUE, input->shape[1]);
-  for (size_t index = 0; index < input->shape[1]; index++){
-    curr_row[index] = INT2NUM(0);
-  }
-
-  switch(input->stype){
-    case nm_dense:
-    {
-      switch (input->dtype) {
-        case nm_bool:
-        {
-          bool* elements = (bool*)input->elements;
-          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
-
-          	for (size_t index = 0; index < input->shape[1]; index++){
-          		curr_row[index] = elements[(row_index * input->shape[1]) + index] ? Qtrue : Qfalse;
-          	}
-          	//rb_yield(DBL2NUM(elements[row_index]));
-          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
-          }
-          break;
-        }
-        case nm_int:
-        {
-          int* elements = (int*)input->elements;
-          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
-
-          	for (size_t index = 0; index < input->shape[1]; index++){
-          		curr_row[index] = INT2NUM(elements[(row_index * input->shape[1]) + index]);
-          	}
-          	//rb_yield(DBL2NUM(elements[row_index]));
-          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
-          }
-          break;
-        }
-        case nm_float64:
-        {
-          double* elements = (double*)input->elements;
-          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
-
-          	for (size_t index = 0; index < input->shape[1]; index++){
-          		curr_row[index] = DBL2NUM(elements[(row_index * input->shape[1]) + index]);
-          	}
-          	//rb_yield(DBL2NUM(elements[row_index]));
-          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
-          }
-
-          break;
-        }
-        case nm_float32:
-        {
-          float* elements = (float*)input->elements;
-          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
-
-          	for (size_t index = 0; index < input->shape[1]; index++){
-          		curr_row[index] = DBL2NUM(elements[(row_index * input->shape[1]) + index]);
-          	}
-          	//rb_yield(DBL2NUM(elements[row_index]));
-          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
-          }
-          for (size_t index = 0; index < input->count; index++){
-            rb_yield(DBL2NUM(elements[index]));
-          }
-          break;
-        }
-        case nm_complex32:
-        {
-          float complex* elements = (float complex*)input->elements;
-          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
-
-          	for (size_t index = 0; index < input->shape[1]; index++){
-          		curr_row[index] = DBL2NUM(creal(elements[(row_index * input->shape[1]) + index])), DBL2NUM(cimag(elements[(row_index * input->shape[1]) + index]));
-          	}
-          	//rb_yield(DBL2NUM(elements[row_index]));
-          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
-          }
-          break;
-        }
-        case nm_complex64:
-        {
-          double complex* elements = (double complex*)input->elements;
-          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
-
-          	for (size_t index = 0; index < input->shape[1]; index++){
-          		curr_row[index] = DBL2NUM(creal(elements[(row_index * input->shape[1]) + index])), DBL2NUM(cimag(elements[(row_index * input->shape[1]) + index]));
-          	}
-          	//rb_yield(DBL2NUM(elements[row_index]));
-          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
-          }
-          break;
-        }
-      }
-      break;
-    }
-    case nm_sparse: //this is to be modified later during sparse work
-    {
-      switch(input->dtype){
-        case nm_float64:
-        {
-          double* elements = (double*)input->sp->csr->elements;
-          for (size_t row_index = 0; row_index < input->shape[0]; row_index++){
-
-          	for (size_t index = 0; index < input->shape[1]; index++){
-          		curr_row[index] = DBL2NUM(elements[(row_index * input->shape[1]) + index]);
-          	}
-          	//rb_yield(DBL2NUM(elements[row_index]));
-          	rb_yield(rb_ary_new4(input->shape[1], curr_row));
-          }
-          break;
-        }
-      }
-      break;
-    }
-  }
-
-  return self;
+  return nm_each_rank(self, SIZET2NUM(0));
 }
 
 VALUE nm_each_column(VALUE self) {
-  return Qnil;
+  return nm_each_rank(self, SIZET2NUM(1));
 }
 
 VALUE nm_each_layer(VALUE self) {
-  return Qnil;
+  return nm_each_rank(self, SIZET2NUM(2));
 }
 
 /*
@@ -2070,7 +1953,7 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
           size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
           if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[i];
+            curr_index_value = lower[state_index];
             state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{
@@ -2101,7 +1984,7 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
           size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
           if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[i];
+            curr_index_value = lower[state_index];
             state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{
@@ -2132,7 +2015,7 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
           size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
           if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[i];
+            curr_index_value = lower[state_index];
             state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{
@@ -2163,7 +2046,7 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
           size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
           if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[i];
+            curr_index_value = lower[state_index];
             state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{
@@ -2194,7 +2077,7 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
           size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
           if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[i];
+            curr_index_value = lower[state_index];
             state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{
@@ -2225,7 +2108,7 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
           size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
           if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[i];
+            curr_index_value = lower[state_index];
             state_array[state_index] = SIZET2NUM(curr_index_value);
           }
           else{

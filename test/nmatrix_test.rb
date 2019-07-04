@@ -7,6 +7,8 @@ class NMatrix::CreationTest < Minitest::Test
     @b = NMatrix.new [2,2],[true, true, false, true], :nm_bool
     @m = NMatrix.new [2,2,2],[1, 2, 3, 4, 5, 6, 7, 8]
     @n = NMatrix.new [2,1,2],[1, 2, 3, 4]
+    @s = NMatrix.new [2, 2],[1, 2, 3, 4]
+    @s_int = NMatrix.new [2, 2],[1, 2, 3, 4], :nm_int
   end
 
   def test_dims
@@ -50,6 +52,11 @@ class NMatrix::CreationTest < Minitest::Test
     assert_equal @m[1,1,0], 11
     @n[0,0,1] = 12
     assert_equal @n[0,0,1], 12
+  end
+
+  def test_slicing
+    assert_equal @m[0, 0.., 0..], @s
+    assert_equal @m[0, 0.., 0..], @s_int
   end
 
 end
