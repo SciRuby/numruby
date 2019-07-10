@@ -4,7 +4,7 @@
  *	-	self matrix, type: NMatrix
  *	
  *	returns the inverse matrix of type NMatrix
-*/
+ */
 VALUE nm_invert(VALUE self){
   nmatrix* matrix;
   Data_Get_Struct(self, nmatrix, matrix);
@@ -27,18 +27,9 @@ VALUE nm_invert(VALUE self){
   dgetrf(matrix->elements, matrix->shape[1], matrix->shape[0], ipiv, elements);
   int lda = n;
 
-  LAPACKE_dgetri(101, n, elements, lda, ipiv);
+  LAPACKE_dgetri(LAPACK_ROW_MAJOR, n, elements, lda, ipiv);
   result->elements = elements;
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
-}
-
-
-void dgetrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, double* arr2) {
-  int m = (int)cols;
-  int n = (int)rows;
-  memcpy(arr2, arr, sizeof(double)*rows*cols);
-  int lda = m;
-  LAPACKE_dgetrf(101,m,n,arr2,lda,ipiv);
 }
 
 void sgetrf(const float* arr, const size_t cols, const size_t rows, int* ipiv, float* arr2) {
@@ -46,7 +37,31 @@ void sgetrf(const float* arr, const size_t cols, const size_t rows, int* ipiv, f
   int n = (int)rows;
   memcpy(arr2, arr, sizeof(float)*rows*cols);
   int lda = m;
-  LAPACKE_sgetrf(101,m,n,arr2,lda,ipiv);
+  LAPACKE_sgetrf(LAPACK_ROW_MAJOR,m,n,arr2,lda,ipiv);
+}
+
+void dgetrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, double* arr2) {
+  int m = (int)cols;
+  int n = (int)rows;
+  memcpy(arr2, arr, sizeof(double)*rows*cols);
+  int lda = m;
+  LAPACKE_dgetrf(LAPACK_ROW_MAJOR,m,n,arr2,lda,ipiv);
+}
+
+void cgetrf(const float complex* arr, const size_t cols, const size_t rows, int* ipiv, float complex* arr2) {
+  int m = (int)cols;
+  int n = (int)rows;
+  memcpy(arr2, arr, sizeof(float complex)*rows*cols);
+  int lda = m;
+  LAPACKE_cgetrf(LAPACK_ROW_MAJOR,m,n,arr2,lda,ipiv);
+}
+
+void zgetrf(const double complex* arr, const size_t cols, const size_t rows, int* ipiv, double complex* arr2) {
+  int m = (int)cols;
+  int n = (int)rows;
+  memcpy(arr2, arr, sizeof(double complex)*rows*cols);
+  int lda = m;
+  LAPACKE_zgetrf(LAPACK_ROW_MAJOR,m,n,arr2,lda,ipiv);
 }
 
 /*
@@ -56,7 +71,7 @@ void sgetrf(const float* arr, const size_t cols, const size_t rows, int* ipiv, f
  *	-	rhs vector, type: NMatrix
  *	
  *	returns the vector of type NMatrix with values of unknowns
-*/
+ */
 VALUE nm_solve(VALUE self, VALUE rhs_val){
   nmatrix* lhs;
   nmatrix* rhs;
@@ -99,7 +114,7 @@ VALUE nm_solve(VALUE self, VALUE rhs_val){
  *	-	matrix, type: NMatrix
  *	
  *	returns the determinant of matrix of type integer
-*/
+ */
 VALUE nm_det(VALUE self){
   nmatrix* matrix;
   Data_Get_Struct(self, nmatrix, matrix);
