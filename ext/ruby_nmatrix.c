@@ -234,8 +234,10 @@ DECL_UNARY_RUBY_ACCESSOR(ceil)
 
 VALUE nm_dot(VALUE self, VALUE another);
 VALUE nm_norm2(VALUE self);
-void dgetrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, double* arr2);
 void sgetrf(const float* arr, const size_t cols, const size_t rows, int* ipiv, float* arr2);
+void dgetrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, double* arr2);
+void cgetrf(const float complex* arr, const size_t cols, const size_t rows, int* ipiv, float  complex* arr2);
+void zgetrf(const double complex* arr, const size_t cols, const size_t rows, int* ipiv, double  complex* arr2);
 VALUE nm_invert(VALUE self);
 VALUE nm_solve(VALUE self, VALUE rhs_val);
 VALUE nm_det(VALUE self);

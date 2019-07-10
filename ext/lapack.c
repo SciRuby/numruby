@@ -1,3 +1,5 @@
+// TODO: m should represent no. of rows and n no. of cols throughout
+
 /*
  *	Calculates matrix inverse.
  *	Args:
@@ -24,7 +26,7 @@ VALUE nm_invert(VALUE self){
   int n = (int)matrix->shape[1];
   int m = (int)matrix->shape[0];
   int* ipiv = ALLOC_N(int, min(m,n)+1);
-  dgetrf(matrix->elements, matrix->shape[1], matrix->shape[0], ipiv, elements);
+  dgetrf(matrix->elements, n, m, ipiv, elements);
   int lda = n;
 
   LAPACKE_dgetri(LAPACK_ROW_MAJOR, n, elements, lda, ipiv);
@@ -258,7 +260,43 @@ VALUE nm_lu(VALUE self){
 }
 
 VALUE nm_lu_factor(VALUE self){
-  return Qnil;
+  nmatrix* matrix;
+  Data_Get_Struct(self, nmatrix, matrix);
+
+  nmatrix* result_lu = ALLOC(nmatrix);
+  result_lu->dtype = matrix->dtype;
+  result_lu->stype = matrix->stype;
+  result_lu->ndims = matrix->ndims;
+  result_lu->shape = ALLOC_N(size_t, result_lu->ndims);
+
+  result_lu->shape[0] = matrix->shape[0];
+  result_lu->shape[1] = matrix->shape[1];
+  result_lu->count = matrix->count;
+  double* elements = ALLOC_N(double, result_lu->shape[0] * result_lu->shape[1]);
+
+
+  int n = (int)matrix->shape[1];
+  int m = (int)matrix->shape[0];
+  nmatrix* result_piv = ALLOC(nmatrix);
+  result_piv->dtype = nm_int;
+  result_piv->stype = matrix->stype;
+  result_piv->ndims = 1;
+  result_piv->shape = ALLOC_N(size_t, result_piv->ndims);
+
+  // TODO: confirm if length of ipiv is min(m, n) or min(m, n) + 1?
+  result_piv->shape[0] = min(m,n);
+  result_piv->count = min(m,n);
+  int* ipiv = ALLOC_N(int, min(m,n));
+  dgetrf(matrix->elements, matrix->shape[1], matrix->shape[0], ipiv, elements);
+
+  result_lu->elements = elements;
+  result_piv->elements = ipiv;
+
+  VALUE ary = rb_ary_new();
+  rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu));
+  rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_piv));
+
+  return ary;
 }
 
 VALUE nm_lu_solve(VALUE self, VALUE rhs_val){
