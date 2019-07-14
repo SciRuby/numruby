@@ -1705,157 +1705,14 @@ VALUE nm_lteq(VALUE self, VALUE another){
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
+
+
 /*
- * Addition operator. Returns a matrix which is the elementwise addition
- * of the two operand matrices.
+ * Elementiwise operator. Returns a matrix which is the elementwise operation
+ * of the two operands (left one is always a matrix, right one could be 
+ * a matrix of a single value).
  *
  */
-VALUE nm_add(VALUE self, VALUE another){
-  nmatrix* left;
-  Data_Get_Struct(self, nmatrix, left);
-
-  nmatrix* result = ALLOC(nmatrix);
-  result->dtype = left->dtype;
-  result->stype = left->stype;
-  result->count = left->count;
-  result->ndims = left->ndims;
-  result->shape = ALLOC_N(size_t, result->ndims);
-
-  for(size_t index = 0; index < result->ndims; index++){
-    result->shape[index] = left->shape[index];
-  }
-
-  switch (result->dtype) {
-    case nm_bool:
-    {
-      bool* left_elements = (bool*)left->elements;
-      bool* result_elements = ALLOC_N(bool, result->count);
-      if(RB_TYPE_P(another, T_TRUE) || RB_TYPE_P(another, T_FALSE)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + (another ? Qtrue : Qfalse);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        bool* right_elements = (bool*)right->elements;
-
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
-        }
-      }
-      result->elements = result_elements;
-      break;
-    }
-    case nm_int:
-    {
-      int* left_elements = (int*)left->elements;
-      int* result_elements = ALLOC_N(int, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        int* right_elements = (int*)right->elements;
-
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
-        }
-      }
-      result->elements = result_elements;
-      break;
-    }
-    case nm_float64:
-    {
-      double* left_elements = (double*)left->elements;
-      double* result_elements = ALLOC_N(double, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        double* right_elements = (double*)right->elements;
-
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
-        }
-      }
-      result->elements = result_elements;
-      break;
-    }
-    case nm_float32:
-    {
-      float* left_elements = (float*)left->elements;
-      float* result_elements = ALLOC_N(float, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        float* right_elements = (float*)right->elements;
-
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
-        }
-      }
-      result->elements = result_elements;
-      break;
-    }
-    case nm_complex32:
-    {
-      complex float* left_elements = (complex float*)left->elements;
-      complex float* result_elements = ALLOC_N(complex float, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        complex float* right_elements = (complex float*)right->elements;
-
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
-        }
-      }
-      result->elements = result_elements;
-      break;
-    }
-    case nm_complex64:
-    {
-      complex double* left_elements = (complex double*)left->elements;
-      complex double* result_elements = ALLOC_N(complex double, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        complex double* right_elements = (complex double*)right->elements;
-
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
-        }
-      }
-      result->elements = result_elements;
-      break;
-    }
-  }
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
-}
-
 #define DEF_ELEMENTWISE_RUBY_ACCESSOR(name, oper)  \
 VALUE nm_##name(VALUE self, VALUE another){        \
   nmatrix* left;                                   \
@@ -1877,9 +1734,9 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     {                                                                            \
       bool* left_elements = (bool*)left->elements;                           \
       bool* result_elements = ALLOC_N(bool, result->count);                  \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(RB_TYPE_P(another, T_TRUE) || RB_TYPE_P(another, T_FALSE)){           \
         for(size_t index = 0; index < left->count; index++){                     \
-          result_elements[index] = left_elements[index] + NUM2DBL(another);      \
+          result_elements[index] = (left_elements[index]) oper (another ? Qtrue : Qfalse);      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
@@ -1900,7 +1757,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       int* result_elements = ALLOC_N(int, result->count);                  \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
         for(size_t index = 0; index < left->count; index++){                     \
-          result_elements[index] = left_elements[index] + NUM2DBL(another);      \
+          result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
@@ -1921,7 +1778,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       double* result_elements = ALLOC_N(double, result->count);                  \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
         for(size_t index = 0; index < left->count; index++){                     \
-          result_elements[index] = left_elements[index] + NUM2DBL(another);      \
+          result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
@@ -2003,6 +1860,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);                         \
 }
 
+DEF_ELEMENTWISE_RUBY_ACCESSOR(add, +)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(subtract, -)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(multiply, *)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(divide, /)
