@@ -1707,19 +1707,227 @@ VALUE nm_lteq(VALUE self, VALUE another){
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
-void broadcast_matrix(nmatrix* nmat, size_t* new_shape) {
+void get_index_for_broadcast_element(size_t* prev_shape, size_t prev_ndims, size_t* state_array, size_t new_dims) {
   return;
 }
 
-void get_broadcast_shape(nmatrix* nmat1, nmatrix* nmat2, size_t* broadcast_shape) {
+void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
+  size_t prev_dims = nmat->ndims;
+  size_t* prev_shape = nmat->shape;
+
+  nmat->ndims = new_ndims;
+  nmat->shape = new_shape;
+
+  size_t new_count = 1;
+  for(size_t i = 0; i < new_ndims; ++i) {
+    new_count *= new_shape[i];
+  }
+  nmat->count = new_count;
+
+  VALUE* state_array = ALLOC_N(VALUE, new_ndims);
+  for(size_t i = 0; i < new_ndims; ++i) {
+    state_array[i] = SIZET2NUM(0);
+  }
+
+  switch(nmat->dtype) {
+    case nm_bool:
+    {
+      bool* nmat_elements = (bool*)nmat->elements;
+
+      bool* new_elements = ALLOC_N(bool, new_count);
+
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == new_shape[state_index]){
+            curr_index_value = 0;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      nmat->elements = new_elements;
+      break;
+    }
+    case nm_int:
+    {
+      int* nmat_elements = (int*)nmat->elements;
+
+      int* new_elements = ALLOC_N(int, new_count);
+
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == new_shape[state_index]){
+            curr_index_value = 0;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      nmat->elements = new_elements;
+      break;
+    }
+    case nm_float32:
+    {
+      float* nmat_elements = (float*)nmat->elements;
+
+      float* new_elements = ALLOC_N(float, new_count);
+
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == new_shape[state_index]){
+            curr_index_value = 0;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      nmat->elements = new_elements;
+      break;
+    }
+    case nm_float64:
+    {
+      double* nmat_elements = (double*)nmat->elements;
+
+      double* new_elements = ALLOC_N(double, new_count);
+
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == new_shape[state_index]){
+            curr_index_value = 0;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      nmat->elements = new_elements;
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* nmat_elements = (float complex*)nmat->elements;
+
+      float complex* new_elements = ALLOC_N(float complex, new_count);
+
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == new_shape[state_index]){
+            curr_index_value = 0;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      nmat->elements = new_elements;
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* nmat_elements = (double complex*)nmat->elements;
+
+      double complex* new_elements = ALLOC_N(double complex, new_count);
+
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+          if(curr_index_value == new_shape[state_index]){
+            curr_index_value = 0;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = SIZET2NUM(curr_index_value);
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      nmat->elements = new_elements;
+      break;
+    }
+  }
+}
+
+void get_broadcast_shape(nmatrix* nmat1, nmatrix* nmat2, size_t* broadcast_shape, size_t broadcast_dims) {
   size_t* shape1 = nmat1->shape;
   size_t* shape2 = nmat2->shape;
 
   size_t ndims1 = nmat1->ndims;
   size_t ndims2 = nmat2->ndims;
 
-  size_t result_ndims = max(ndims1, ndims2);
-  broadcast_shape = ALLOC_N(size_t, result_ndims);
+  broadcast_dims = max(ndims1, ndims2);
+  broadcast_shape = ALLOC_N(size_t, broadcast_dims);
 
   if(ndims1 > ndims2) {
     for(size_t i = 0; i < ndims1; ++i) {
