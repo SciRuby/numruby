@@ -516,6 +516,8 @@ void Init_nmatrix() {
   rb_define_singleton_method(NumRuby, "zeros",  zeros_nmatrix, -1);
   rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
   // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
+  rb_define_singleton_method(NumRuby, "broadcast_to", nm_broadcast_to, 2);
+  //rb_define_singleton_method(NumRuby, "broadcast_arrays",   nm_broadcast_arrays, -1);
 
   Lapack = rb_define_module_under(NumRuby, "Lapack");
   rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
@@ -1705,7 +1707,65 @@ VALUE nm_lteq(VALUE self, VALUE another){
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
+void broadcast_matrix(nmatrix* nmat, size_t* new_shape) {
+  return;
+}
 
+void get_broadcast_shape(nmatrix* nmat1, nmatrix* nmat2, size_t* broadcast_shape) {
+  size_t* shape1 = nmat1->shape;
+  size_t* shape2 = nmat2->shape;
+
+  size_t ndims1 = nmat1->ndims;
+  size_t ndims2 = nmat2->ndims;
+
+  size_t result_ndims = max(ndims1, ndims2);
+  broadcast_shape = ALLOC_N(size_t, result_ndims);
+
+  if(ndims1 > ndims2) {
+    for(size_t i = 0; i < ndims1; ++i) {
+      broadcast_shape[i] = shape1[i];
+    }
+    for(size_t i = 0; i < ndims2; ++i) {
+      size_t res_index = (ndims1 - ndims2) + i;
+      if(shape1[res_index] != shape2[i] && min(shape1[res_index], shape2[i]) > 1) {
+        //raise broadcast compatibility error
+      }
+      broadcast_shape[res_index] = max(shape1[res_index], shape2[i]);
+    }
+  }
+  else {
+    for(size_t i = 0; i < ndims2; ++i) {
+      broadcast_shape[i] = shape2[i];
+    }
+    for(size_t i = 0; i < ndims1; ++i) {
+      size_t res_index = (ndims2 - ndims1) + i;
+      if(shape1[i] != shape2[res_index] && min(shape1[i], shape2[res_index]) > 1) {
+        //raise broadcast compatibility error
+      }
+      broadcast_shape[res_index] = max(shape1[i], shape2[res_index]);
+    }
+  }
+}
+
+/*
+ * Returns a broadcasted matrix created from
+ * input matrix and having given shape
+ *
+ *
+ */
+VALUE nm_broadcast_to(VALUE self, VALUE new_shape) {
+  return Qnil;
+}
+
+/*
+ * Takes any number of matrices and broadcasts them 
+ * against each other and store resulting broadcasted 
+ * matrices as array of NMatrix objects
+ *
+ */
+VALUE nm_broadcast_arrays(int argc, VALUE* argv) {
+  return Qnil;
+}
 
 /*
  * Elementiwise operator. Returns a matrix which is the elementwise operation
