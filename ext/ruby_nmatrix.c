@@ -1709,6 +1709,12 @@ VALUE nm_lteq(VALUE self, VALUE another){
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
+/*
+ * get_index_for_broadcast_element takes prev_shape,
+ * and state_array and returns the index
+ * for location in flat list of matrix before broadcasting
+ *
+ */
 size_t get_index_for_broadcast_element(size_t* prev_shape, size_t prev_ndims, size_t* state_array, size_t new_dims) {
   size_t* indices = ALLOC_N(size_t, prev_ndims);
   for(size_t i = (new_dims - prev_ndims), index = 0; i < new_dims; ++i, ++index) {
@@ -1730,6 +1736,12 @@ size_t get_index_for_broadcast_element(size_t* prev_shape, size_t prev_ndims, si
   return new_index;
 }
 
+/*
+ * broadcast_matrix takes the matrix nmat
+ * and broadcasts it to new_shape if it's 
+ * valid according to broadcasting rules,
+ * else raises an error
+ */
 void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
   size_t prev_ndims = nmat->ndims;
   size_t* prev_shape = nmat->shape;
@@ -1938,6 +1950,12 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
   }
 }
 
+/*
+ * get_broadcast_shape takes two matrices
+ * nmat1, nmat2 and calculates broadcast_shape, broadcast_dims
+ * which denotes the shape these 2 matrices should be
+ * broadcasted to be compatible for elementwise operations
+ */
 void get_broadcast_shape(nmatrix* nmat1, nmatrix* nmat2, size_t* broadcast_shape, size_t broadcast_dims) {
   size_t* shape1 = nmat1->shape;
   size_t* shape2 = nmat2->shape;
@@ -1972,6 +1990,25 @@ void get_broadcast_shape(nmatrix* nmat1, nmatrix* nmat2, size_t* broadcast_shape
       broadcast_shape[res_index] = max(shape1[i], shape2[res_index]);
     }
   }
+}
+
+/*
+ * broadcast_matrices takes two matrices nmat1, nmat2
+ * and broadcasts them against each other.
+ * Raises error if matrices are incompatible
+ * for broadcasting
+ */
+void broadcast_matrices(nmatrix* nmat1, nmatrix* nmat2) {
+  size_t* broadcast_shape;
+  size_t broadcast_dims;
+
+  //check for broadcasting compatibilty
+  //and raise error if incompatible
+
+  get_broadcast_shape(nmat1, nmat2, broadcast_shape, broadcast_dims);
+
+  broadcast_matrix(nmat1, broadcast_shape, broadcast_dims);
+  broadcast_matrix(nmat2, broadcast_shape, broadcast_dims);
 }
 
 /*
@@ -2029,7 +2066,8 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       else{                                                                      \
         nmatrix* right;                                                          \
         Data_Get_Struct(another, nmatrix, right);                                \
-        bool* right_elements = (bool*)right->elements;                       \
+        broadcast_matrices(left, right);                                         \
+        bool* right_elements = (bool*)right->elements;                           \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
@@ -2050,28 +2088,8 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       else{                                                                      \
         nmatrix* right;                                                          \
         Data_Get_Struct(another, nmatrix, right);                                \
-        int* right_elements = (int*)right->elements;                       \
-                                                                                 \
-        for(size_t index = 0; index < left->count; index++){                     \
-          result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
-        }                                                                        \
-      }                                                                          \
-      result->elements = result_elements;                                        \
-      break;                                                                     \
-    }                                                                            \
-    case nm_float64:                                                             \
-    {                                                                            \
-      double* left_elements = (double*)left->elements;                           \
-      double* result_elements = ALLOC_N(double, result->count);                  \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
-        for(size_t index = 0; index < left->count; index++){                     \
-          result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
-        }                                                                        \
-      }                                                                          \
-      else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        double* right_elements = (double*)right->elements;                       \
+        broadcast_matrices(left, right);                                         \
+        int* right_elements = (int*)right->elements;                             \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
@@ -2092,6 +2110,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       else{                                                                      \
         nmatrix* right;                                                          \
         Data_Get_Struct(another, nmatrix, right);                                \
+        broadcast_matrices(left, right);                                         \
         float* right_elements = (float*)right->elements;                         \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                       \
@@ -2101,6 +2120,28 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       result->elements = result_elements;                                          \
       break;                                                                       \
     }                                                                             \
+    case nm_float64:                                                             \
+    {                                                                            \
+      double* left_elements = (double*)left->elements;                           \
+      double* result_elements = ALLOC_N(double, result->count);                  \
+      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+        for(size_t index = 0; index < left->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
+        }                                                                        \
+      }                                                                          \
+      else{                                                                      \
+        nmatrix* right;                                                          \
+        Data_Get_Struct(another, nmatrix, right);                                \
+        broadcast_matrices(left, right);                                         \
+        double* right_elements = (double*)right->elements;                       \
+                                                                                 \
+        for(size_t index = 0; index < left->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
+        }                                                                        \
+      }                                                                          \
+      result->elements = result_elements;                                        \
+      break;                                                                     \
+    }                                                                            \
     case nm_complex32:                                                             \
     {                                                                            \
       complex float* left_elements = (complex float*)left->elements;                             \
@@ -2113,7 +2154,8 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       else{                                                                      \
         nmatrix* right;                                                          \
         Data_Get_Struct(another, nmatrix, right);                                \
-        complex float* right_elements = (complex float*)right->elements;                         \
+        broadcast_matrices(left, right);                                         \
+        complex float* right_elements = (complex float*)right->elements;         \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                       \
           result_elements[index] = (left_elements[index]) oper (right_elements[index]);   \
@@ -2134,7 +2176,8 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       else{                                                                      \
         nmatrix* right;                                                          \
         Data_Get_Struct(another, nmatrix, right);                                \
-        complex double* right_elements = (complex double*)right->elements;                         \
+        broadcast_matrices(left, right);                                         \
+        complex double* right_elements = (complex double*)right->elements;       \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                       \
           result_elements[index] = (left_elements[index]) oper (right_elements[index]);   \
@@ -2151,6 +2194,7 @@ DEF_ELEMENTWISE_RUBY_ACCESSOR(add, +)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(subtract, -)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(multiply, *)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(divide, /)
+//DEF_ELEMENTWISE_RUBY_ACCESSOR(divide, ^) this should be for exponentiation (or use **)
 
 /*
  *  Elementwise sin operator.
