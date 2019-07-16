@@ -346,6 +346,8 @@ VALUE average_nmatrix(int argc, VALUE* argv);
 VALUE constant_nmatrix(int argc, VALUE* argv, double constant);
 VALUE zeros_nmatrix(int argc, VALUE* argv);
 VALUE ones_nmatrix(int argc, VALUE* argv);
+VALUE nm_broadcast_to(VALUE self, VALUE new_shape);
+//VALUE nm_broadcast_arrays(int argc, VALUE* argv)
 
 VALUE nmatrix_init(int argc, VALUE* argv, VALUE self);
 VALUE nm_get_dim(VALUE self);
@@ -517,7 +519,7 @@ void Init_nmatrix() {
   rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
   // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
   rb_define_singleton_method(NumRuby, "broadcast_to", nm_broadcast_to, 2);
-  //rb_define_singleton_method(NumRuby, "broadcast_arrays",   nm_broadcast_arrays, -1);
+  //rb_define_singleton_method(NumRuby, "broadcast_arrays", nm_broadcast_arrays, -1);
 
   Lapack = rb_define_module_under(NumRuby, "Lapack");
   rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
@@ -1707,12 +1709,29 @@ VALUE nm_lteq(VALUE self, VALUE another){
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
-void get_index_for_broadcast_element(size_t* prev_shape, size_t prev_ndims, size_t* state_array, size_t new_dims) {
-  return;
+size_t get_index_for_broadcast_element(size_t* prev_shape, size_t prev_ndims, size_t* state_array, size_t new_dims) {
+  size_t* indices = ALLOC_N(size_t, prev_ndims);
+  for(size_t i = (new_dims - prev_ndims), index = 0; i < new_dims; ++i, ++index) {
+    indices[index] = max(state_array[i], prev_shape[index] - 1);
+  }
+
+  size_t new_index = 0;
+  size_t* stride = ALLOC_N(size_t, prev_ndims);
+  
+  size_t val = 1;
+  for(size_t i = prev_ndims; i > 0; --i) {
+    stride[i - 1] = val;
+    val *= prev_shape[i - 1];
+  }
+
+  for(size_t i = 0; i < prev_ndims; ++i) {
+    new_index += ((size_t)FIX2LONG(indices[i]) * stride[i]);
+  }
+  return new_index;
 }
 
 void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
-  size_t prev_dims = nmat->ndims;
+  size_t prev_ndims = nmat->ndims;
   size_t* prev_shape = nmat->shape;
 
   nmat->ndims = new_ndims;
@@ -1737,7 +1756,7 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
       bool* new_elements = ALLOC_N(bool, new_count);
 
       for(size_t i = 0; i < new_count; ++i){
-        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
         new_elements[i] = nmat_elements[nmat_index];
 
         size_t state_index = (nmat->ndims) - 1;
@@ -1768,7 +1787,7 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
       int* new_elements = ALLOC_N(int, new_count);
 
       for(size_t i = 0; i < new_count; ++i){
-        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
         new_elements[i] = nmat_elements[nmat_index];
 
         size_t state_index = (nmat->ndims) - 1;
@@ -1799,7 +1818,7 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
       float* new_elements = ALLOC_N(float, new_count);
 
       for(size_t i = 0; i < new_count; ++i){
-        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
         new_elements[i] = nmat_elements[nmat_index];
 
         size_t state_index = (nmat->ndims) - 1;
@@ -1830,7 +1849,7 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
       double* new_elements = ALLOC_N(double, new_count);
 
       for(size_t i = 0; i < new_count; ++i){
-        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
         new_elements[i] = nmat_elements[nmat_index];
 
         size_t state_index = (nmat->ndims) - 1;
@@ -1861,7 +1880,7 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
       float complex* new_elements = ALLOC_N(float complex, new_count);
 
       for(size_t i = 0; i < new_count; ++i){
-        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
         new_elements[i] = nmat_elements[nmat_index];
 
         size_t state_index = (nmat->ndims) - 1;
@@ -1892,7 +1911,7 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
       double complex* new_elements = ALLOC_N(double complex, new_count);
 
       for(size_t i = 0; i < new_count; ++i){
-        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_dims);
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
         new_elements[i] = nmat_elements[nmat_index];
 
         size_t state_index = (nmat->ndims) - 1;
