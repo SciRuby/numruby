@@ -55,8 +55,8 @@ class NMatrix::CreationTest < Minitest::Test
   end
 
   def test_slicing
-    assert_equal @m[0, 0.., 0..], @s
-    assert_equal @m[0, 0.., 0..], @s_int
+    assert_equal @m[0, 0..1, 0..1], @s
+    assert_equal @m[0, 0..1, 0..1], @s_int
   end
 
 end
