@@ -2018,7 +2018,19 @@ void broadcast_matrices(nmatrix* nmat1, nmatrix* nmat2) {
  *
  */
 VALUE nm_broadcast_to(VALUE self, VALUE new_shape) {
-  return Qnil;
+  nmatrix* nmat;
+  Data_Get_Struct(self, nmatrix, nmat);
+
+  size_t new_ndims = (size_t)RARRAY_LEN(new_shape);
+
+  size_t* new_shape = ALLOC_N(size_t, new_ndims);
+  for (size_t index = 0; index < new_ndims; index++) {
+    new_shape[index] = (size_t)FIX2LONG(RARRAY_AREF(new_shape, index));
+  }
+
+  broadcast_matrix(nmat, new_shape, new_ndims);
+
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, nmat);
 }
 
 /*
