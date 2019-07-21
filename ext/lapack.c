@@ -327,6 +327,250 @@ VALUE nm_cholesky_solve(VALUE self){
   return Qnil;
 }
 
-VALUE nm_qr(VALUE self){
-  return Qnil;
+/*
+ *  Computes the QR decomposition of matrix.
+ *  Args:
+ *  - input matrix, type: NMatrix
+ *  - mode, type: String
+ *  - pivoting, type: Boolean
+ *  
+ *  returns the vector of type NMatrix with values of unknowns
+ */
+VALUE nm_qr(VALUE self, VALUE mode, VALUE pivoting){
+  nmatrix* matrix;
+  Data_Get_Struct(self, nmatrix, matrix);
+
+  rb_funcall(mode, rb_intern("to_lower"), 0);
+  VALUE mode_full = rb_str_new2("full");
+  VALUE mode_r = rb_str_new2("r");
+  VALUE mode_economic = rb_str_new2("economic");
+  VALUE mode_raw = rb_str_new2("raw");
+
+  bool pivot = (bool)RTEST(pivoting);
+
+  if (mode != mode_full && mode && mode_r &&
+    mode != mode_economic && mode != mode_raw) {
+    //raise ArgumentError: invalid mode
+  }
+
+  nmatrix* result_qr = ALLOC(nmatrix);
+  result_qr->dtype = matrix->dtype;
+  result_qr->stype = matrix->stype;
+  result_qr->ndims = matrix->ndims;
+  result_qr->shape = ALLOC_N(size_t, result_qr->ndims);
+
+  result_qr->shape[0] =  matrix->shape[0];
+  result_qr->shape[1] =  matrix->shape[1];
+  result_qr->count = matrix->count;
+
+  nmatrix* result_tau = ALLOC(nmatrix);
+  result_tau->dtype = matrix->dtype;
+  result_tau->stype = matrix->stype;
+  result_tau->ndims = matrix->ndims;
+  result_tau->shape = ALLOC_N(size_t, result_tau->ndims);
+
+  result_tau->shape[0] =  matrix->shape[0];
+  result_tau->shape[1] =  matrix->shape[1];
+  result_tau->count = matrix->count;
+
+  nmatrix* result_q = ALLOC(nmatrix);
+  result_q->dtype = matrix->dtype;
+  result_q->stype = matrix->stype;
+  result_q->ndims = matrix->ndims;
+  result_q->shape = ALLOC_N(size_t, result_q->ndims);
+
+  result_q->shape[0] =  matrix->shape[0];
+  result_q->shape[1] =  matrix->shape[1];
+  result_q->count = matrix->count;
+
+  nmatrix* result_r = ALLOC(nmatrix);
+  result_r->dtype = matrix->dtype;
+  result_r->stype = matrix->stype;
+  result_r->ndims = matrix->ndims;
+  result_r->shape = ALLOC_N(size_t, result_r->ndims);
+
+  result_r->shape[0] =  matrix->shape[0];
+  result_r->shape[1] =  matrix->shape[1];
+  result_r->count = matrix->count;
+
+  if(pivoting == true) {
+    switch(matrix->dtype) {
+      case nm_bool:
+      {
+        //raise not supported error
+      }
+      case nm_int:
+      {
+        //raise not supported error
+      }
+      case nm_float32:
+      {
+
+      }
+      case nm_float64:
+      {
+
+      }
+      case nm_complex32:
+      {
+
+      }
+      case nm_complex64:
+      {
+
+      }
+    }
+  }
+  else {
+    switch(matrix->dtype) {
+      case nm_bool:
+      {
+        //raise not supported error
+      }
+      case nm_int:
+      {
+        //raise not supported error
+      }
+      case nm_float32:
+      {
+        int m = matrix->shape[0]; //no. of rows
+        int n = matrix->shape[1]; //no. of cols
+        int lda = m;
+        int info = -1;
+        float* tau = ALLOC_N(float, min(m, n));
+        float* elements = ALLOC_N(float, result->count);
+
+        memcpy(elements, matrix->elements, sizeof(float)*result->count);
+
+        info = LAPACKE_sgeqrf(LAPACK_ROW_MAJOR, m, n, a, lda, tau);
+
+        result_qr->elements = elements;
+        result_tau->elements = tau;
+
+        if(mode == mode_raw) {
+          VALUE ary = rb_ary_new();
+          rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr));
+          rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau));
+
+          return ary;
+          //return [qr, tou]
+        }
+        else if(mode == mode_r) {
+          //TODO
+        }
+        else if(mode == mode_economic) {
+          //TODO
+        }
+        else if(mode == mode_full) {
+          //TODO
+        }
+      }
+      case nm_float64:
+      {
+        //lapack_int LAPACKE_dgeqrf( int matrix_layout, lapack_int m, lapack_int n,
+        //                   double* a, lapack_int lda, double* tau );
+        int m = matrix->shape[0]; //no. of rows
+        int n = matrix->shape[1]; //no. of cols
+        int lda = m;
+        int info = -1;
+        double* tau = ALLOC_N(double, min(m, n));
+        double* elements = ALLOC_N(double, result->count);
+
+        memcpy(elements, matrix->elements, sizeof(double)*result->count);
+
+        info = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, m, n, a, lda, tau);
+
+        result_qr->elements = elements;
+        result_tau->elements = tau;
+
+        if(mode == mode_raw) {
+          VALUE ary = rb_ary_new();
+          rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr));
+          rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau));
+
+          return ary;
+          //return [qr, tou]
+        }
+        else if(mode == mode_r) {
+          //TODO
+        }
+        else if(mode == mode_economic) {
+          //TODO
+        }
+        else if(mode == mode_full) {
+          //TODO
+        }
+      }
+      case nm_complex32:
+      {
+        int m = matrix->shape[0]; //no. of rows
+        int n = matrix->shape[1]; //no. of cols
+        int lda = m;
+        int info = -1;
+        float complex* tau = ALLOC_N(float complex, min(m, n));
+        float complex* elements = ALLOC_N(float complex, result->count);
+
+        memcpy(elements, matrix->elements, sizeof(float complex)*result->count);
+
+        info = LAPACKE_cgeqrf(LAPACK_ROW_MAJOR, m, n, a, lda, tau);
+
+        result_qr->elements = elements;
+        result_tau->elements = tau;
+
+        if(mode == mode_raw) {
+          VALUE ary = rb_ary_new();
+          rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr));
+          rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau));
+
+          return ary;
+          //return [qr, tou]
+        }
+        else if(mode == mode_r) {
+          //TODO
+        }
+        else if(mode == mode_economic) {
+          //TODO
+        }
+        else if(mode == mode_full) {
+          //TODO
+        }
+      }
+      case nm_complex64:
+      {
+        int m = matrix->shape[0]; //no. of rows
+        int n = matrix->shape[1]; //no. of cols
+        int lda = m;
+        int info = -1;
+        double complex* tau = ALLOC_N(double complex, min(m, n));
+        double complex* elements = ALLOC_N(double complex, result->count);
+
+        memcpy(elements, matrix->elements, sizeof(double complex)*result->count);
+
+        info = LAPACKE_zgeqrf(LAPACK_ROW_MAJOR, m, n, a, lda, tau);
+
+        result_qr->elements = elements;
+        result_tau->elements = tau;
+
+        if(mode == mode_raw) {
+          VALUE ary = rb_ary_new();
+          rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr));
+          rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau));
+
+          return ary;
+          //return [qr, tou]
+        }
+        else if(mode == mode_r) {
+          //TODO
+        }
+        else if(mode == mode_economic) {
+          //TODO
+        }
+        else if(mode == mode_full) {
+          //TODO
+        }
+      }
+    }
+  }
+
+
 }

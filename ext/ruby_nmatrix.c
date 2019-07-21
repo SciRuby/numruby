@@ -257,7 +257,7 @@ VALUE nm_diagsvd(VALUE self);
 VALUE nm_orth(VALUE self);
 VALUE nm_cholesky(VALUE self);
 VALUE nm_cholesky_solve(VALUE self);
-VALUE nm_qr(VALUE self);
+VALUE nm_qr(VALUE self, VALUE mode, VALUE pivoting);
 
 VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self);
 VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self);
@@ -432,7 +432,7 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "orth", nm_orth, 0);
   rb_define_method(NMatrix, "cholesky", nm_cholesky, 0);
   rb_define_method(NMatrix, "cholesky_solve", nm_cholesky_solve, 0);
-  rb_define_method(NMatrix, "qr", nm_qr, 0);
+  rb_define_method(NMatrix, "qr", nm_qr, 2);
 
   rb_define_method(NMatrix, "[]", nm_accessor_get, -1);
   rb_define_method(NMatrix, "[]=", nm_accessor_set, -1);
