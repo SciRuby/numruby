@@ -6,6 +6,7 @@ class NMatrix::CreationTest < Minitest::Test
     @i = NMatrix.new [2,2],[1, 4.2, 3, 4]
     @b = NMatrix.new [2,2],[true, true, false, true], :nm_bool
     @m = NMatrix.new [2,2,2],[1, 2, 3, 4, 5, 6, 7, 8]
+    @m_int = NMatrix.new [2,2,2],[1, 2, 3, 4, 5, 6, 7, 8], :nm_int
     @n = NMatrix.new [2,1,2],[1, 2, 3, 4]
     @s = NMatrix.new [2, 2],[1, 2, 3, 4]
     @s_int = NMatrix.new [2, 2],[1, 2, 3, 4], :nm_int
@@ -56,7 +57,7 @@ class NMatrix::CreationTest < Minitest::Test
 
   def test_slicing
     assert_equal @m[0, 0..1, 0..1], @s
-    assert_equal @m[0, 0..1, 0..1], @s_int
+    assert_equal @m_int[0, 0..1, 0..1], @s_int
   end
 
 end
