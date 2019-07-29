@@ -1,3 +1,5 @@
 require 'nmatrix/numruby.rb'
 require 'nmatrix/nmatrix.rb'
+require 'nmatrix/lapack.rb'
+require 'nmatrix/blas.rb'
 require 'nmatrix.so'
