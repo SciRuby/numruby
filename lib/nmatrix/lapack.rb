@@ -45,43 +45,69 @@ module NumRuby::Linalg
 
   end
 
-  def self.lu
+  # Matrix Decomposition
+
+
+  def self.lu(matrix)
 
   end
 
-  def self.lu_factor
+  def self.lu_factor(matrix)
 
   end
 
-  def self.lu_solve
+  def self.lu_solve(matrix, rhs_val)
 
   end
 
-  def self.svd
+  # Computes the QR decomposition of matrix.
+  # Args:
+  # - input matrix, type: NMatrix
+  # - mode, type: String
+  # - pivoting, type: Boolean
+  def self.svd(matrix)
 
   end
 
-  def self.svdvals
+  def self.svdvals(matrix)
 
   end
 
-  def self.diagsvd
+  def self.diagsvd(matrix)
 
   end
 
-  def self.orth
+  def self.orth(matrix)
 
   end
 
-  def self.cholesky
+  def self.cholesky(matrix)
 
   end
 
-  def self.cholesky_solve
+  def self.cholesky_solve(matrix)
 
   end
 
-  def self.qr
+  # Computes the QR decomposition of matrix.
+  # Args:
+  # - input matrix, type: NMatrix
+  # - mode, type: String
+  # - pivoting, type: Boolean
+  def self.qr(matrix, mode: "full", pivoting: false)
+    if not ['full', 'r', 'economic', 'raw'].include?(mode.downcase)
+      raise("Invalid mode. Should be one of ['full', 'r', 'economic', 'raw']")
+    end
+    if not matrix.is_a?(NMatrix)
+      raise("Invalid matrix. Not of type NMatrix")
+    end
+    if matrix.dim != 2
+      raise("Invalid shape of matrix. Should be 2.")
+    end
+    m, n = matrix.shape
 
+    if pivoting == false
+      qr, tau = NumRuby::Lapack.geqrf(matrix)
+    end
   end
 end

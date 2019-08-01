@@ -11,17 +11,20 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
   int n = matrix->shape[1]; //no. of cols
   int lda = m, info = -1;
 
-  nmatrix* result_qr = nmatrix_new(matrix->dtype, matrix->stype, 2, 0, NULL, NULL);
-  nmatrix* result_tau = nmatrix_new(matrix->dtype, matrix->stype, 2, 0, NULL, NULL);
+  nmatrix* result_qr = nmatrix_new(matrix->dtype, matrix->stype, 2, matrix->count, matrix->shape, NULL);
+  nmatrix* result_tau = nmatrix_new(matrix->dtype, matrix->stype, 1, min(m, n), NULL, NULL);
+  result_tau->shape[0] = min(m, n);
 
   switch(matrix->dtype) {
     case nm_bool:
     {
       //not supported error
+      break;
     }
     case nm_int:
     {
       //not supported error
+      break;
     }
     case nm_float32:
     {
@@ -37,6 +40,7 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
       rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr));
       rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau));
       return ary;
+      break;
     }
     case nm_float64:
     {
@@ -47,11 +51,17 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
 
       result_qr->elements = elements;
       result_tau->elements = tau_elements;
+      // for(size_t i = 0; i < matrix->count; ++i) {
+      //   printf("%f\n", elements[i]);
+      // }
+      // for(size_t i = 0; i < min(m, n); ++i) {
+      //   printf("%f\n", tau_elements[i]);
+      // }
 
-      VALUE ary = rb_ary_new();
-      rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr));
-      rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau));
-      return ary;
+      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
+      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      return rb_ary_new3(2, qr, tau);
+      break;
     }
     case nm_complex32:
     {
@@ -67,6 +77,7 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
       rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr));
       rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau));
       return ary;
+      break;
     }
     case nm_complex64:
     {
@@ -82,11 +93,11 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
       rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr));
       rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau));
       return ary;
+      break;
     }
   }
+  return INT2NUM(-1);
 }
-
-
 
 
 // TODO: m should represent no. of rows and n no. of cols throughout
@@ -418,15 +429,6 @@ VALUE nm_cholesky_solve(VALUE self){
   return Qnil;
 }
 
-/*
- *  Computes the QR decomposition of matrix.
- *  Args:
- *  - input matrix, type: NMatrix
- *  - mode, type: String
- *  - pivoting, type: Boolean
- *  
- *  returns the vector of type NMatrix with values of unknowns
- */
-VALUE nm_qr(VALUE self, VALUE mode, VALUE pivoting){
-  
+VALUE nm_qr(VALUE self){
+  return Qnil;
 }

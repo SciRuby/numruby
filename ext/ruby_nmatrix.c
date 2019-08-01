@@ -133,8 +133,14 @@ nmatrix* nmatrix_new(
   matrix->count = count;
 
   matrix->shape = ALLOC_N(size_t, matrix->ndims);
-  for(size_t i = 0; i < ndims; ++i) {
-    matrix->shape[i] = shape[i];
+  if(shape != NULL) {
+    for(size_t i = 0; i < ndims; ++i) {
+      matrix->shape[i] = shape[i];
+    }
+  }
+
+  if(elements == NULL) {
+    return matrix;
   }
 
   switch(dtype) {
@@ -211,16 +217,22 @@ nmatrix* matrix_copy(nmatrix* original_matrix) {
   matrix->count = original_matrix->count;
 
   matrix->shape = ALLOC_N(size_t, matrix->ndims);
-  for(size_t i = 0; i < ndims; ++i) {
-    matrix->shape[i] = original_matrix->shape[i];
+  if(original_matrix->shape != NULL) {
+    for(size_t i = 0; i < original_matrix->ndims; ++i) {
+      matrix->shape[i] = original_matrix->shape[i];
+    }
   }
 
-  switch(dtype) {
+  if(original_matrix->elements == NULL) {
+    return matrix;
+  }
+
+  switch(original_matrix->dtype) {
     case nm_bool:
     {
       bool* temp_elements = (bool*)original_matrix->elements;
       bool* matrix_elements = ALLOC_N(bool, matrix->count);
-      for(size_t i = 0; i < count; ++i) {
+      for(size_t i = 0; i < original_matrix->count; ++i) {
         matrix_elements[i] = temp_elements[i];
       }
       matrix->elements = matrix_elements;
@@ -230,7 +242,7 @@ nmatrix* matrix_copy(nmatrix* original_matrix) {
     {
       int* temp_elements = (int*)original_matrix->elements;
       int* matrix_elements = ALLOC_N(int, matrix->count);
-      for(size_t i = 0; i < count; ++i) {
+      for(size_t i = 0; i < original_matrix->count; ++i) {
         matrix_elements[i] = temp_elements[i];
       }
       matrix->elements = matrix_elements;
@@ -240,7 +252,7 @@ nmatrix* matrix_copy(nmatrix* original_matrix) {
     {
       float* temp_elements = (float*)original_matrix->elements;
       float* matrix_elements = ALLOC_N(float, matrix->count);
-      for(size_t i = 0; i < count; ++i) {
+      for(size_t i = 0; i < original_matrix->count; ++i) {
         matrix_elements[i] = temp_elements[i];
       }
       matrix->elements = matrix_elements;
@@ -250,7 +262,7 @@ nmatrix* matrix_copy(nmatrix* original_matrix) {
     {
       double* temp_elements = (double*)original_matrix->elements;
       double* matrix_elements = ALLOC_N(double, matrix->count);
-      for(size_t i = 0; i < count; ++i) {
+      for(size_t i = 0; i < original_matrix->count; ++i) {
         matrix_elements[i] = temp_elements[i];
       }
       matrix->elements = matrix_elements;
@@ -260,7 +272,7 @@ nmatrix* matrix_copy(nmatrix* original_matrix) {
     {
       float complex* temp_elements = (float complex*)original_matrix->elements;
       float complex* matrix_elements = ALLOC_N(float complex, matrix->count);
-      for(size_t i = 0; i < count; ++i) {
+      for(size_t i = 0; i < original_matrix->count; ++i) {
         matrix_elements[i] = temp_elements[i];
       }
       matrix->elements = matrix_elements;
@@ -270,7 +282,7 @@ nmatrix* matrix_copy(nmatrix* original_matrix) {
     {
       double complex* temp_elements = (double complex*)original_matrix->elements;
       double complex* matrix_elements = ALLOC_N(double complex, matrix->count);
-      for(size_t i = 0; i < count; ++i) {
+      for(size_t i = 0; i < original_matrix->count; ++i) {
         matrix_elements[i] = temp_elements[i];
       }
       matrix->elements = matrix_elements;
@@ -425,7 +437,7 @@ VALUE nm_geqp3(int argc, VALUE* argv);
 VALUE nm_orth(VALUE self);
 VALUE nm_cholesky(VALUE self);
 VALUE nm_cholesky_solve(VALUE self);
-VALUE nm_qr(VALUE self, VALUE mode, VALUE pivoting);
+VALUE nm_qr(VALUE self);
 
 VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self);
 VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self);
@@ -484,15 +496,15 @@ void Init_nmatrix() {
   rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
   // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
 
-  Lapack = rb_define_module("NumRuby::Linalg::Lapack");
+  Lapack = rb_define_module_under(NumRuby, "Lapack");
   rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
-  rb_define_singleton_method(Lapack, "orgqr", nm_orgqr, -1);
-  rb_define_singleton_method(Lapack, "geqp3", nm_geqp3, -1);
+  // rb_define_singleton_method(Lapack, "orgqr", nm_orgqr, -1);
+  // rb_define_singleton_method(Lapack, "geqp3", nm_geqp3, -1);
   // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
   // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
   // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
 
-  Blas = rb_define_module("NumRuby::Linalg::Blas");
+  Blas = rb_define_module("Blas");
 
   /*
    * Exception raised when there's a problem with data.

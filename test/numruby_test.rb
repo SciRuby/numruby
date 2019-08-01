@@ -41,7 +41,6 @@ class NumRuby::CreationTest < Minitest::Test
     x = NumRuby.array [2,2],[0, 0, 0, 0]
     y = NumRuby.array [2,2],[0, 0, 0, 0]
     result = NumRuby.append(x, y)
-    assert_equal result, NumRuby.array([4,2],
-                                        [0, 0, 0, 0, 0, 0, 0, 0])
+    assert_equal result, NumRuby.array([4,2], [0, 0, 0, 0, 0, 0, 0, 0])
   end
 end
