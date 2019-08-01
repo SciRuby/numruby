@@ -118,6 +118,53 @@ typedef struct NMATRIX_STRUCT
   sparse_storage* sp;
 }nmatrix;
 
+nmatrix* nmatrix_new(
+  nm_dtype dtype,
+  nm_stype stype,
+  size_t ndims,
+  size_t count,
+  size_t* shape,
+  void* elements
+  ) {
+  nmatrix* matrix = ALLOC(nmatrix);
+  matrix->dtype = dtype;
+  matrix->stype = stype;
+  matrix->ndims = ndims;
+  matrix->count = count;
+
+  matrix->shape = ALLOC_N(size_t, matrix->ndims);
+  for(size_t i = 0; i < ndims; ++i) {
+    matrix->shape[i] = shape[i];
+  }
+  
+  matrix->elements = ALLOC_N(size_t, matrix->count);
+  for(size_t i = 0; i < count; ++i) {
+    matrix->elements[i] = elements[i];
+  }
+
+  return matrix;
+}
+
+nmatrix* matrix_copy(nmatrix* original_matrix) {
+  nmatrix* matrix = ALLOC(nmatrix);
+  matrix->dtype = original_matrix->dtype;
+  matrix->stype = original_matrix->stype;
+  matrix->ndims = original_matrix->ndims;
+  matrix->count = original_matrix->count;
+  
+  matrix->shape = ALLOC_N(size_t, matrix->ndims);
+  for(size_t i = 0; i < ndims; ++i) {
+    matrix->shape[i] = original_matrix->shape[i];
+  }
+  
+  matrix->elements = ALLOC_N(size_t, matrix->count);
+  for(size_t i = 0; i < count; ++i) {
+    matrix->elements[i] = original_matrix->elements[i];
+  }
+
+  return matrix;
+}
+
 typedef enum nm_sparse_type{
   coo,
   csc,
@@ -145,8 +192,7 @@ nm_sparse_type nm_sparse_type_from_rbsymbol(VALUE sym) {
   rb_raise(rb_eArgError, "invalid storage type symbol (:%s) specified", RSTRING_PTR(str));
 }
 
-typedef struct SPARSE_NMATRIX_STRUCT
-{
+typedef struct SPARSE_NMATRIX_STRUCT{
   nm_dtype dtype;
   nm_sparse_type sptype;
   size_t ndims;
@@ -159,6 +205,8 @@ typedef struct SPARSE_NMATRIX_STRUCT
 }sparse_nmatrix;
 
 VALUE NumRuby = Qnil;
+VALUE Lapack = Qnil;
+VALUE Blas = Qnil;
 VALUE DataTypeError = Qnil;
 VALUE ShapeError = Qnil;
 VALUE NMatrix = Qnil;
@@ -253,6 +301,10 @@ VALUE nm_lu_solve(VALUE self, VALUE rhs_val);
 VALUE nm_svd(VALUE self);
 VALUE nm_svdvals(VALUE self);
 VALUE nm_diagsvd(VALUE self);
+
+VALUE nm_geqrf(int argc, VALUE* argv);
+VALUE nm_orgqr(int argc, VALUE* argv);
+VALUE nm_geqp3(int argc, VALUE* argv);
   
 VALUE nm_orth(VALUE self);
 VALUE nm_cholesky(VALUE self);
@@ -315,6 +367,16 @@ void Init_nmatrix() {
   rb_define_singleton_method(NumRuby, "zeros",  zeros_nmatrix, -1);
   rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
   // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
+
+  Lapack = rb_define_module("NumRuby::Linalg::Lapack");
+  rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
+  rb_define_singleton_method(Lapack, "orgqr", nm_orgqr, -1);
+  rb_define_singleton_method(Lapack, "geqp3", nm_geqp3, -1);
+  // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
+  // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
+  // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
+
+  Blas = rb_define_module("NumRuby::Linalg::Blas");
 
   /*
    * Exception raised when there's a problem with data.
