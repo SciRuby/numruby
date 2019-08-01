@@ -136,10 +136,68 @@ nmatrix* nmatrix_new(
   for(size_t i = 0; i < ndims; ++i) {
     matrix->shape[i] = shape[i];
   }
-  
-  matrix->elements = ALLOC_N(size_t, matrix->count);
-  for(size_t i = 0; i < count; ++i) {
-    matrix->elements[i] = elements[i];
+
+  switch(dtype) {
+    case nm_bool:
+    {
+      bool* temp_elements = (bool*)elements;
+      bool* matrix_elements = ALLOC_N(bool, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_int:
+    {
+      int* temp_elements = (int*)elements;
+      int* matrix_elements = ALLOC_N(int, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_float32:
+    {
+      float* temp_elements = (float*)elements;
+      float* matrix_elements = ALLOC_N(float, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_float64:
+    {
+      double* temp_elements = (double*)elements;
+      double* matrix_elements = ALLOC_N(double, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* temp_elements = (float complex*)elements;
+      float complex* matrix_elements = ALLOC_N(float complex, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* temp_elements = (double complex*)elements;
+      double complex* matrix_elements = ALLOC_N(double complex, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
   }
 
   return matrix;
@@ -151,15 +209,73 @@ nmatrix* matrix_copy(nmatrix* original_matrix) {
   matrix->stype = original_matrix->stype;
   matrix->ndims = original_matrix->ndims;
   matrix->count = original_matrix->count;
-  
+
   matrix->shape = ALLOC_N(size_t, matrix->ndims);
   for(size_t i = 0; i < ndims; ++i) {
     matrix->shape[i] = original_matrix->shape[i];
   }
-  
-  matrix->elements = ALLOC_N(size_t, matrix->count);
-  for(size_t i = 0; i < count; ++i) {
-    matrix->elements[i] = original_matrix->elements[i];
+
+  switch(dtype) {
+    case nm_bool:
+    {
+      bool* temp_elements = (bool*)original_matrix->elements;
+      bool* matrix_elements = ALLOC_N(bool, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_int:
+    {
+      int* temp_elements = (int*)original_matrix->elements;
+      int* matrix_elements = ALLOC_N(int, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_float32:
+    {
+      float* temp_elements = (float*)original_matrix->elements;
+      float* matrix_elements = ALLOC_N(float, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_float64:
+    {
+      double* temp_elements = (double*)original_matrix->elements;
+      double* matrix_elements = ALLOC_N(double, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* temp_elements = (float complex*)original_matrix->elements;
+      float complex* matrix_elements = ALLOC_N(float complex, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* temp_elements = (double complex*)original_matrix->elements;
+      double complex* matrix_elements = ALLOC_N(double complex, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
   }
 
   return matrix;
