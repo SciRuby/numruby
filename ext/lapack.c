@@ -9,7 +9,7 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
 
   int m = matrix->shape[0]; //no. of rows
   int n = matrix->shape[1]; //no. of cols
-  int lda = m, info = -1;
+  int lda = n, info = -1;
 
   nmatrix* result_qr = nmatrix_new(matrix->dtype, matrix->stype, 2, matrix->count, matrix->shape, NULL);
   nmatrix* result_tau = nmatrix_new(matrix->dtype, matrix->stype, 1, min(m, n), NULL, NULL);
@@ -36,10 +36,9 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
       result_qr->elements = elements;
       result_tau->elements = tau_elements;
 
-      VALUE ary = rb_ary_new();
-      rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr));
-      rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau));
-      return ary;
+      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
+      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      return rb_ary_new3(2, qr, tau);
       break;
     }
     case nm_float64:
@@ -51,12 +50,6 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
 
       result_qr->elements = elements;
       result_tau->elements = tau_elements;
-      // for(size_t i = 0; i < matrix->count; ++i) {
-      //   printf("%f\n", elements[i]);
-      // }
-      // for(size_t i = 0; i < min(m, n); ++i) {
-      //   printf("%f\n", tau_elements[i]);
-      // }
 
       VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
       VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
@@ -73,10 +66,9 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
       result_qr->elements = elements;
       result_tau->elements = tau_elements;
 
-      VALUE ary = rb_ary_new();
-      rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr));
-      rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau));
-      return ary;
+      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
+      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      return rb_ary_new3(2, qr, tau);
       break;
     }
     case nm_complex64:
@@ -89,10 +81,9 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
       result_qr->elements = elements;
       result_tau->elements = tau_elements;
 
-      VALUE ary = rb_ary_new();
-      rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr));
-      rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau));
-      return ary;
+      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
+      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      return rb_ary_new3(2, qr, tau);
       break;
     }
   }
@@ -426,9 +417,5 @@ VALUE nm_cholesky(VALUE self){
 }
 
 VALUE nm_cholesky_solve(VALUE self){
-  return Qnil;
-}
-
-VALUE nm_qr(VALUE self){
   return Qnil;
 }

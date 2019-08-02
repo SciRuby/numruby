@@ -108,6 +108,7 @@ module NumRuby::Linalg
 
     if pivoting == false
       qr, tau = NumRuby::Lapack.geqrf(matrix)
+      return [qr, tau]
     end
   end
 end
