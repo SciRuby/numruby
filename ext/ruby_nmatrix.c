@@ -497,7 +497,7 @@ void Init_nmatrix() {
 
   Lapack = rb_define_module_under(NumRuby, "Lapack");
   rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
-  // rb_define_singleton_method(Lapack, "orgqr", nm_orgqr, -1);
+  rb_define_singleton_method(Lapack, "orgqr", nm_orgqr, -1);
   // rb_define_singleton_method(Lapack, "geqp3", nm_geqp3, -1);
   // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
   // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);

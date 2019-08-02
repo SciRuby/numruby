@@ -90,6 +90,137 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
   return INT2NUM(-1);
 }
 
+/*
+ * ORGQR generates an M-by-N real matrix Q with orthonormal columns,
+ * which is defined as the first N columns of a product of K elementary
+ * reflectors of order M
+ *       Q = H(1) H(2) . . . H(k)
+ * as returned by GEQRF.
+ */
+VALUE nm_orgqr(int argc, VALUE* argv) {
+  nmatrix* matrix_qr;
+  Data_Get_Struct(argv[0], nmatrix, matrix_qr);
+
+  nmatrix* matrix_tau;
+  Data_Get_Struct(argv[1], nmatrix, matrix_tau);
+
+  int m = matrix_qr->shape[0]; //no. of rows
+  int n = matrix_qr->shape[1]; //no. of cols
+  int k = matrix_tau->shape[0];
+  int lda = n, info = -1;
+
+  nmatrix* result_q = nmatrix_new(matrix_qr->dtype, matrix_qr->stype, 2, matrix_qr->count, matrix_qr->shape, NULL);
+
+  switch(matrix_qr->dtype) {
+    case nm_bool:
+    {
+      //not supported error
+      break;
+    }
+    case nm_int:
+    {
+      //not supported error
+      break;
+    }
+    case nm_float32:
+    {
+      float* tau_elements = (float*)matrix_tau->elements;
+      float* elements = ALLOC_N(float, matrix_qr->count);
+      memcpy(elements, matrix_qr->elements, sizeof(float)*matrix_qr->count);
+      info = LAPACKE_sorgqr(LAPACK_ROW_MAJOR, m, n, k, elements, lda, tau_elements);
+
+      result_q->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_q);
+      break;
+    }
+    case nm_float64:
+    {
+      double* tau_elements = (double*)matrix_tau->elements;
+      double* elements = ALLOC_N(double, matrix_qr->count);
+      memcpy(elements, matrix_qr->elements, sizeof(double)*matrix_qr->count);
+      info = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, m, n, k, elements, lda, tau_elements);
+
+      result_q->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_q);
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* tau_elements = (float complex*)matrix_tau->elements;
+      float complex* elements = ALLOC_N(float complex, matrix_qr->count);
+      memcpy(elements, matrix_qr->elements, sizeof(float complex)*matrix_qr->count);
+      info = LAPACKE_cungqr(LAPACK_ROW_MAJOR, m, n, k, elements, lda, tau_elements);
+
+      result_q->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_q);
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* tau_elements = (double complex*)matrix_tau->elements;
+      double complex* elements = ALLOC_N(double complex, matrix_qr->count);
+      memcpy(elements, matrix_qr->elements, sizeof(double complex)*matrix_qr->count);
+      info = LAPACKE_zungqr(LAPACK_ROW_MAJOR, m, n, k, elements, lda, tau_elements);
+
+      result_q->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_q);
+      break;
+    }
+  }
+  return INT2NUM(-1);
+}
+
+/*
+ *
+ *
+ *
+ */
+VALUE nm_geqp3(int argc, VALUE* argv) {
+  nmatrix* matrix;
+  Data_Get_Struct(argv[0], nmatrix, matrix);
+
+  int m = matrix->shape[0]; //no. of rows
+  int n = matrix->shape[1]; //no. of cols
+  int lda = n, info = -1;
+
+  nmatrix* result_qr = nmatrix_new(matrix->dtype, matrix->stype, 2, matrix->count, matrix->shape, NULL);
+  nmatrix* result_tau = nmatrix_new(matrix->dtype, matrix->stype, 1, min(m, n), NULL, NULL);
+  result_tau->shape[0] = min(m, n);
+
+  switch(matrix->dtype) {
+    case nm_bool:
+    {
+      //not supported error
+      break;
+    }
+    case nm_int:
+    {
+      //not supported error
+      break;
+    }
+    case nm_float32:
+    {
+
+    }
+    case nm_float64:
+    {
+
+    }
+    case nm_complex32:
+    {
+
+    }
+    case nm_complex64:
+    {
+      
+    }
+  }
+  return INT2NUM(-1);
+}
 
 // TODO: m should represent no. of rows and n no. of cols throughout
 
