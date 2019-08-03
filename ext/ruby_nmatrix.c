@@ -433,6 +433,30 @@ VALUE nm_diagsvd(VALUE self);
 VALUE nm_geqrf(int argc, VALUE* argv);
 VALUE nm_orgqr(int argc, VALUE* argv);
 VALUE nm_geqp3(int argc, VALUE* argv);
+
+VALUE nm_potrf(int argc, VALUE* argv);
+VALUE nm_potrs(int argc, VALUE* argv);
+VALUE nm_pbtrf(int argc, VALUE* argv);
+VALUE nm_pbtrs(int argc, VALUE* argv);
+VALUE nm_gesdd(int argc, VALUE* argv);
+VALUE nm_getrf(int argc, VALUE* argv);
+VALUE nm_getrs(int argc, VALUE* argv);
+VALUE nm_ggev(int argc, VALUE* argv);
+VALUE nm_geev(int argc, VALUE* argv);
+VALUE nm_heevr(int argc, VALUE* argv);
+VALUE nm_syevr(int argc, VALUE* argv);
+VALUE nm_hegvx(int argc, VALUE* argv);
+VALUE nm_sygvx(int argc, VALUE* argv);
+VALUE nm_hegvd(int argc, VALUE* argv);
+VALUE nm_sygvd(int argc, VALUE* argv);
+VALUE nm_hegv(int argc, VALUE* argv);
+VALUE nm_sygv(int argc, VALUE* argv);
+VALUE nm_gelss(int argc, VALUE* argv);
+VALUE nm_posv(int argc, VALUE* argv);
+VALUE nm_gesv(int argc, VALUE* argv);
+VALUE nm_nrm2(int argc, VALUE* argv);
+VALUE nm_lange(int argc, VALUE* argv);
+
   
 VALUE nm_orth(VALUE self);
 VALUE nm_cholesky(VALUE self);
@@ -498,7 +522,7 @@ void Init_nmatrix() {
   Lapack = rb_define_module_under(NumRuby, "Lapack");
   rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
   rb_define_singleton_method(Lapack, "orgqr", nm_orgqr, -1);
-  // rb_define_singleton_method(Lapack, "geqp3", nm_geqp3, -1);
+  rb_define_singleton_method(Lapack, "geqp3", nm_geqp3, -1);
   // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
   // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
   // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
