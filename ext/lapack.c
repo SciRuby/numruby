@@ -175,8 +175,8 @@ VALUE nm_orgqr(int argc, VALUE* argv) {
 }
 
 /*
- *
- *
+ * GEQP3 computes a QR factorization with column pivoting of a
+ * matrix A: A*P = Q*R using Level 3 BLAS.
  *
  */
 VALUE nm_geqp3(int argc, VALUE* argv) {
@@ -190,6 +190,8 @@ VALUE nm_geqp3(int argc, VALUE* argv) {
   nmatrix* result_qr = nmatrix_new(matrix->dtype, matrix->stype, 2, matrix->count, matrix->shape, NULL);
   nmatrix* result_tau = nmatrix_new(matrix->dtype, matrix->stype, 1, min(m, n), NULL, NULL);
   result_tau->shape[0] = min(m, n);
+  nmatrix* result_jpvt = nmatrix_new(matrix->dtype, matrix->stype, 1, n, NULL, NULL);
+  result_jpvt->shape[0] = n;
 
   switch(matrix->dtype) {
     case nm_bool:
@@ -204,19 +206,75 @@ VALUE nm_geqp3(int argc, VALUE* argv) {
     }
     case nm_float32:
     {
+      float* elements = ALLOC_N(float, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(float)*matrix->count);
+      float* tau_elements = ALLOC_N(float, result_tau->count);
+      int* jpvt_elements = ALLOC_N(int, result_jpvt->count);
+      info = LAPACKE_sgeqp3(LAPACK_ROW_MAJOR, m, n, elements, lda, jpvt_elements, tau_elements);
 
+      result_qr->elements = elements;
+      result_tau->elements = tau_elements;
+      result_jpvt->elements = jpvt_elements;
+
+      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
+      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      VALUE jpvt = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_jpvt);
+      return rb_ary_new3(3, qr, tau, jpvt);
+      break;
     }
     case nm_float64:
     {
+      double* elements = ALLOC_N(double, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(double)*matrix->count);
+      double* tau_elements = ALLOC_N(double, result_tau->count);
+      int* jpvt_elements = ALLOC_N(int, result_jpvt->count);
+      info = LAPACKE_dgeqp3(LAPACK_ROW_MAJOR, m, n, elements, lda, jpvt_elements, tau_elements);
 
+      result_qr->elements = elements;
+      result_tau->elements = tau_elements;
+      result_jpvt->elements = jpvt_elements;
+
+      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
+      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      VALUE jpvt = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_jpvt);
+      return rb_ary_new3(3, qr, tau, jpvt);
+      break;
     }
     case nm_complex32:
     {
+      float complex* elements = ALLOC_N(float complex, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(float complex)*matrix->count);
+      float complex* tau_elements = ALLOC_N(float complex, result_tau->count);
+      int* jpvt_elements = ALLOC_N(int, result_jpvt->count);
+      info = LAPACKE_cgeqp3(LAPACK_ROW_MAJOR, m, n, elements, lda, jpvt_elements, tau_elements);
 
+      result_qr->elements = elements;
+      result_tau->elements = tau_elements;
+      result_jpvt->elements = jpvt_elements;
+
+      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
+      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      VALUE jpvt = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_jpvt);
+      return rb_ary_new3(3, qr, tau, jpvt);
+      break;
     }
     case nm_complex64:
     {
-      
+      double complex* elements = ALLOC_N(double complex, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(double complex)*matrix->count);
+      double complex* tau_elements = ALLOC_N(double complex, result_tau->count);
+      int* jpvt_elements = ALLOC_N(int, result_jpvt->count);
+      info = LAPACKE_zgeqp3(LAPACK_ROW_MAJOR, m, n, elements, lda, jpvt_elements, tau_elements);
+
+      result_qr->elements = elements;
+      result_tau->elements = tau_elements;
+      result_jpvt->elements = jpvt_elements;
+
+      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
+      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      VALUE jpvt = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_jpvt);
+      return rb_ary_new3(3, qr, tau, jpvt);
+      break;
     }
   }
   return INT2NUM(-1);
