@@ -280,6 +280,90 @@ VALUE nm_geqp3(int argc, VALUE* argv) {
   return INT2NUM(-1);
 }
 
+/*
+ * POTRF computes the Cholesky factorization of a real symmetric
+ * positive definite matrix A.
+ * 
+ * The factorization has the form
+ *    A = U**T * U, if UPLO = 'U', or
+ *    A = L * L**T, if UPLO = 'L',
+ * where U is an upper triangular matrix and L is lower triangular.
+ * 
+ * This is the block version of the algorithm, calling Level 3 BLAS.
+ *
+ */
+VALUE nm_potrf(int argc, VALUE* argv) {
+  nmatrix* matrix;
+  Data_Get_Struct(argv[0], nmatrix, matrix);
+
+  bool lower = (bool)RTEST(argv[1]);
+
+  int m = matrix->shape[0]; //no. of rows
+  int n = matrix->shape[1]; //no. of cols
+  int lda = n, info = -1;
+  char uplo = lower ? 'L' : 'U';
+
+  nmatrix* result_cho = nmatrix_new(matrix->dtype, matrix->stype, 2, matrix->count, matrix->shape, NULL);
+
+  switch(matrix->dtype) {
+    case nm_bool:
+    {
+      //not supported error
+      break;
+    }
+    case nm_int:
+    {
+      //not supported error
+      break;
+    }
+    case nm_float32:
+    {
+      float* elements = ALLOC_N(float, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(float)*matrix->count);
+      info = LAPACKE_dpotrf(LAPACK_ROW_MAJOR, uplo, n, elements, lda);
+
+      result_cho->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_cho);
+      break;
+    }
+    case nm_float64:
+    {
+      double* elements = ALLOC_N(double, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(double)*matrix->count);
+      info = LAPACKE_dpotrf(LAPACK_ROW_MAJOR, uplo, n, elements, lda);
+
+      result_cho->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_cho);
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* elements = ALLOC_N(float complex, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(float complex)*matrix->count);
+      info = LAPACKE_dpotrf(LAPACK_ROW_MAJOR, uplo, n, elements, lda);
+
+      result_cho->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_cho);
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* elements = ALLOC_N(double complex, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(double complex)*matrix->count);
+      info = LAPACKE_dpotrf(LAPACK_ROW_MAJOR, uplo, n, elements, lda);
+
+      result_cho->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_cho);
+      break;
+    }
+  }
+  return INT2NUM(-1);
+}
+
 // TODO: m should represent no. of rows and n no. of cols throughout
 
 /*
