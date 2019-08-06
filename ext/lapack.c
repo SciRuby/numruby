@@ -533,6 +533,106 @@ VALUE nm_gesdd(int argc, VALUE* argv) {
   return INT2NUM(-1);
 }
 
+/*
+ * GETRF computes an LU factorization of a general M-by-N matrix A
+ * using partial pivoting with row interchanges.
+ * 
+ * The factorization has the form
+ *    A = P * L * U
+ * where P is a permutation matrix, L is lower triangular with unit
+ * diagonal elements (lower trapezoidal if m > n), and U is upper
+ * triangular (upper trapezoidal if m < n).
+ * 
+ * This is the right-looking Level 3 BLAS version of the algorithm.
+ *
+ */
+VALUE nm_getrf(int argc, VALUE* argv) {
+  nmatrix* matrix;
+  Data_Get_Struct(argv[0], nmatrix, matrix);
+
+  int m = matrix->shape[0]; //no. of rows
+  int n = matrix->shape[1]; //no. of cols
+  int lda = n, info = -1;
+
+  nmatrix* result_lu = nmatrix_new(matrix->dtype, matrix->stype, 2, matrix->count, matrix->shape, NULL);
+  nmatrix* result_ipiv = nmatrix_new(matrix->dtype, matrix->stype, 1, min(m, n), NULL, NULL);
+  result_ipiv->shape[0] = min(m, n);
+
+  switch(matrix->dtype) {
+    case nm_bool:
+    {
+      //not supported error
+      break;
+    }
+    case nm_int:
+    {
+      //not supported error
+      break;
+    }
+    case nm_float32:
+    {
+      float* elements = ALLOC_N(float, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(float)*matrix->count);
+      float* ipiv_elements = ALLOC_N(int, min(m, n));
+      info = LAPACKE_sgetrf(LAPACK_ROW_MAJOR, m, n, elements, lda, ipiv_elements);
+
+      result_lu->elements = elements;
+      result_ipiv->elements = ipiv_elements;
+
+      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
+      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      return rb_ary_new3(2, lu, ipiv);
+      break;
+    }
+    case nm_float64:
+    {
+      double* elements = ALLOC_N(double, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(double)*matrix->count);
+      double* ipiv_elements = ALLOC_N(int, min(m, n));
+      info = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, m, n, elements, lda, ipiv_elements);
+
+      result_lu->elements = elements;
+      result_ipiv->elements = ipiv_elements;
+
+      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
+      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      return rb_ary_new3(2, lu, ipiv);
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* elements = ALLOC_N(float complex, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(float complex)*matrix->count);
+      float complex* ipiv_elements = ALLOC_N(int, min(m, n));
+      info = LAPACKE_cgetrf(LAPACK_ROW_MAJOR, m, n, elements, lda, ipiv_elements);
+
+      result_lu->elements = elements;
+      result_ipiv->elements = ipiv_elements;
+
+      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
+      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      return rb_ary_new3(2, lu, ipiv);
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* elements = ALLOC_N(double complex, matrix->count);
+      memcpy(elements, matrix->elements, sizeof(double complex)*matrix->count);
+      double complex* ipiv_elements = ALLOC_N(int, min(m, n));
+      info = LAPACKE_zgetrf(LAPACK_ROW_MAJOR, m, n, elements, lda, ipiv_elements);
+
+      result_lu->elements = elements;
+      result_ipiv->elements = ipiv_elements;
+
+      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
+      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      return rb_ary_new3(2, lu, ipiv);
+      break;
+    }
+  }
+  return INT2NUM(-1);
+}
+
 // TODO: m should represent no. of rows and n no. of cols throughout
 
 /*
