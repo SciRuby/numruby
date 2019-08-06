@@ -320,7 +320,7 @@ VALUE nm_potrf(int argc, VALUE* argv) {
     {
       float* elements = ALLOC_N(float, matrix->count);
       memcpy(elements, matrix->elements, sizeof(float)*matrix->count);
-      info = LAPACKE_dpotrf(LAPACK_ROW_MAJOR, uplo, n, elements, lda);
+      info = LAPACKE_spotrf(LAPACK_ROW_MAJOR, uplo, n, elements, lda);
 
       result_cho->elements = elements;
 
@@ -342,7 +342,7 @@ VALUE nm_potrf(int argc, VALUE* argv) {
     {
       float complex* elements = ALLOC_N(float complex, matrix->count);
       memcpy(elements, matrix->elements, sizeof(float complex)*matrix->count);
-      info = LAPACKE_dpotrf(LAPACK_ROW_MAJOR, uplo, n, elements, lda);
+      info = LAPACKE_cpotrf(LAPACK_ROW_MAJOR, uplo, n, elements, lda);
 
       result_cho->elements = elements;
 
@@ -353,7 +353,7 @@ VALUE nm_potrf(int argc, VALUE* argv) {
     {
       double complex* elements = ALLOC_N(double complex, matrix->count);
       memcpy(elements, matrix->elements, sizeof(double complex)*matrix->count);
-      info = LAPACKE_dpotrf(LAPACK_ROW_MAJOR, uplo, n, elements, lda);
+      info = LAPACKE_zpotrf(LAPACK_ROW_MAJOR, uplo, n, elements, lda);
 
       result_cho->elements = elements;
 
@@ -405,7 +405,7 @@ VALUE nm_potrs(int argc, VALUE* argv) {
     {
       float* elements_a = (float*)matrix_a->elements;
       float* elements_b = (float*)matrix_b->elements;
-      info = LAPACKE_dpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
+      info = LAPACKE_spotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
 
       result->elements = elements_b;
 
@@ -427,7 +427,7 @@ VALUE nm_potrs(int argc, VALUE* argv) {
     {
       float complex* elements_a = (float complex*)matrix_a->elements;
       float complex* elements_b = (float complex*)matrix_b->elements;
-      info = LAPACKE_dpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
+      info = LAPACKE_cpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
 
       result->elements = elements_b;
 
@@ -438,11 +438,95 @@ VALUE nm_potrs(int argc, VALUE* argv) {
     {
       double complex* elements_a = (double complex*)matrix_a->elements;
       double complex* elements_b = (double complex*)matrix_b->elements;
-      info = LAPACKE_dpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
+      info = LAPACKE_zpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
 
       result->elements = elements_b;
 
       return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+  }
+  return INT2NUM(-1);
+}
+
+/*
+ * GESDD computes the singular value decomposition (SVD) of a real
+ * M-by-N matrix A, optionally computing the left and right singular
+ * vectors. If singular vectors are desired, it uses a
+ * divide-and-conquer algorithm.
+ *
+ * The SVD is written
+ *    A = U * SIGMA * transpose(V)
+ *
+ * where SIGMA is an M-by-N matrix which is zero except for its
+ * min(m,n) diagonal elements, U is an M-by-M orthogonal matrix, and
+ * V is an N-by-N orthogonal matrix. The diagonal elements of SIGMA
+ * are the singular values of A; they are real and non-negative, and
+ * are returned in descending order. The first min(m,n) columns of
+ * U and V are the left and right singular vectors of A.
+ * 
+ * Note that the routine returns VT = V**T, not V.
+ * 
+ * The divide and conquer algorithm makes very mild assumptions about
+ * floating point arithmetic. It will work on machines with a guard
+ * digit in add/subtract, or on those binary machines without guard
+ * digits which subtract like the Cray X-MP, Cray Y-MP, Cray C-90, or
+ * Cray-2. It could conceivably fail on hexadecimal or decimal machines
+ * without guard digits, but we know of none.
+ * 
+ */
+VALUE nm_gesdd(int argc, VALUE* argv) {
+  nmatrix* matrix;
+  Data_Get_Struct(argv[0], nmatrix, matrix);
+
+  int m = matrix->shape[0]; //no. of rows
+  int n = matrix->shape[1]; //no. of cols
+  int lda = n, info = -1;
+
+  bool full_matrices = RTEST(argv[1]);
+  bool compute_uv = RTEST(argv[2]);
+
+  char jobz = full_matrices ? 'A' : 'S';
+
+  if(compute_uv == false) {
+    jobz = 'N';
+  }
+
+  nmatrix* result = nmatrix_new(matrix->dtype, matrix->stype, 2, matrix->count, matrix->shape, NULL);
+
+  switch(matrix->dtype) {
+    case nm_bool:
+    {
+      //not supported error
+      break;
+    }
+    case nm_int:
+    {
+      //not supported error
+      break;
+    }
+    case nm_float32:
+    {
+      break;
+    }
+    case nm_float64:
+    {
+      // lapack_int LAPACKE_dgesdd( int matrix_layout, char jobz, lapack_int m,
+      //                      lapack_int n, double* a, lapack_int lda, double* s,
+      //                      double* u, lapack_int ldu, double* vt,
+      //                      lapack_int ldvt );
+      double* elements = (double*)matrix->elements;
+      double* elements_s;
+      double* elements_u;
+      //info = LAPACKE_dgesdd(LAPACK_ROW_MAJOR, jobz, m, n, elements, lda, elements_s, elements_u);
+      break;
+    }
+    case nm_complex32:
+    {
+      break;
+    }
+    case nm_complex64:
+    {
       break;
     }
   }
