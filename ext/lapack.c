@@ -364,6 +364,91 @@ VALUE nm_potrf(int argc, VALUE* argv) {
   return INT2NUM(-1);
 }
 
+/*
+ * POTRS solves a system of linear equations A*X = B with a symmetric
+ * positive definite matrix A using the Cholesky factorization
+ * A = U**T*U or A = L*L**T computed by POTRF.
+ *
+ */
+VALUE nm_potrs(int argc, VALUE* argv) {
+  nmatrix* matrix_a;
+  Data_Get_Struct(argv[0], nmatrix, matrix_a);
+
+  int m_a = matrix_a->shape[0]; //no. of rows
+  int n_a = matrix_a->shape[1]; //no. of cols
+  int lda_a = n_a, info = -1;
+
+  nmatrix* matrix_b;
+  Data_Get_Struct(argv[1], nmatrix, matrix_b);
+
+  int m_b = matrix_b->shape[0]; //no. of rows
+  int n_b = matrix_b->shape[1]; //no. of cols
+  int lda_b = n_b;
+
+  bool lower = (bool)RTEST(argv[2]);
+  char uplo = lower ? 'L' : 'U';
+
+  nmatrix* result = nmatrix_new(matrix_b->dtype, matrix_b->stype, 2, matrix_b->count, matrix_b->shape, NULL);
+
+  switch(matrix_a->dtype) {
+    case nm_bool:
+    {
+      //not supported error
+      break;
+    }
+    case nm_int:
+    {
+      //not supported error
+      break;
+    }
+    case nm_float32:
+    {
+      float* elements_a = (float*)matrix_a->elements;
+      float* elements_b = (float*)matrix_b->elements;
+      info = LAPACKE_dpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
+
+      result->elements = elements_b;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+    case nm_float64:
+    {
+      double* elements_a = (double*)matrix_a->elements;
+      double* elements_b = (double*)matrix_b->elements;
+      info = LAPACKE_dpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
+
+      result->elements = elements_b;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* elements_a = (float complex*)matrix_a->elements;
+      float complex* elements_b = (float complex*)matrix_b->elements;
+      info = LAPACKE_dpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
+
+      result->elements = elements_b;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* elements_a = (double complex*)matrix_a->elements;
+      double complex* elements_b = (double complex*)matrix_b->elements;
+      info = LAPACKE_dpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
+
+      result->elements = elements_b;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+  }
+  return INT2NUM(-1);
+}
+
 // TODO: m should represent no. of rows and n no. of cols throughout
 
 /*

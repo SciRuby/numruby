@@ -430,10 +430,11 @@ VALUE nm_svd(VALUE self);
 VALUE nm_svdvals(VALUE self);
 VALUE nm_diagsvd(VALUE self);
 
+// LAPACK routines
+
 VALUE nm_geqrf(int argc, VALUE* argv);
 VALUE nm_orgqr(int argc, VALUE* argv);
 VALUE nm_geqp3(int argc, VALUE* argv);
-
 VALUE nm_potrf(int argc, VALUE* argv);
 VALUE nm_potrs(int argc, VALUE* argv);
 VALUE nm_pbtrf(int argc, VALUE* argv);
@@ -456,7 +457,6 @@ VALUE nm_posv(int argc, VALUE* argv);
 VALUE nm_gesv(int argc, VALUE* argv);
 VALUE nm_nrm2(int argc, VALUE* argv);
 VALUE nm_lange(int argc, VALUE* argv);
-
   
 VALUE nm_orth(VALUE self);
 VALUE nm_cholesky(VALUE self);
