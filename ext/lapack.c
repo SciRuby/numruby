@@ -404,7 +404,8 @@ VALUE nm_potrs(int argc, VALUE* argv) {
     case nm_float32:
     {
       float* elements_a = (float*)matrix_a->elements;
-      float* elements_b = (float*)matrix_b->elements;
+      float* elements_b = ALLOC_N(float, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(float)*matrix_b->count);
       info = LAPACKE_spotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
 
       result->elements = elements_b;
@@ -415,7 +416,8 @@ VALUE nm_potrs(int argc, VALUE* argv) {
     case nm_float64:
     {
       double* elements_a = (double*)matrix_a->elements;
-      double* elements_b = (double*)matrix_b->elements;
+      double* elements_b = ALLOC_N(double, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(double)*matrix_b->count);
       info = LAPACKE_dpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
 
       result->elements = elements_b;
@@ -426,7 +428,8 @@ VALUE nm_potrs(int argc, VALUE* argv) {
     case nm_complex32:
     {
       float complex* elements_a = (float complex*)matrix_a->elements;
-      float complex* elements_b = (float complex*)matrix_b->elements;
+      float complex* elements_b = ALLOC_N(float complex, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(float complex)*matrix_b->count);
       info = LAPACKE_cpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
 
       result->elements = elements_b;
@@ -437,7 +440,8 @@ VALUE nm_potrs(int argc, VALUE* argv) {
     case nm_complex64:
     {
       double complex* elements_a = (double complex*)matrix_a->elements;
-      double complex* elements_b = (double complex*)matrix_b->elements;
+      double complex* elements_b = ALLOC_N(double complex, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(double complex)*matrix_b->count);
       info = LAPACKE_zpotrs(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
 
       result->elements = elements_b;
@@ -627,6 +631,110 @@ VALUE nm_getrf(int argc, VALUE* argv) {
       VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
       VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
       return rb_ary_new3(2, lu, ipiv);
+      break;
+    }
+  }
+  return INT2NUM(-1);
+}
+
+/*
+ * GETRS solves a system of linear equations
+ *    A * X = B  or  A**T * X = B
+ * with a general N-by-N matrix A using the LU factorization computed
+ * by GETRF.
+ *
+ */
+VALUE nm_getrs(int argc, VALUE* argv) {
+  nmatrix* matrix_a;
+  Data_Get_Struct(argv[0], nmatrix, matrix_a);
+
+  int m_a = matrix_a->shape[0]; //no. of rows
+  int n_a = matrix_a->shape[1]; //no. of cols
+  int lda_a = n_a, info = -1;
+
+  nmatrix* matrix_b;
+  Data_Get_Struct(argv[1], nmatrix, matrix_b);
+
+  int m_b = matrix_b->shape[0]; //no. of rows
+  int n_b = matrix_b->shape[1]; //no. of cols
+  int lda_b = n_b;
+
+  int tra = NUM2INT(argv[2]);
+  char trans = 'N';
+
+  if(tra == 1) {
+    trans = 'T';
+  }
+  else if(tra == 2) {
+    trans = 'C';
+  }
+
+  nmatrix* matrix_ipiv;
+  Data_Get_Struct(argv[3], nmatrix, matrix_ipiv);
+
+  nmatrix* result = nmatrix_new(matrix_b->dtype, matrix_b->stype, 2, matrix_b->count, matrix_b->shape, NULL);
+
+  switch(matrix_a->dtype) {
+    case nm_bool:
+    {
+      //not supported error
+      break;
+    }
+    case nm_int:
+    {
+      //not supported error
+      break;
+    }
+    case nm_float32:
+    {
+      float* elements_a = (float*)matrix_a->elements;
+      float* elements_b = ALLOC_N(float, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(float)*matrix_b->count);
+      int* ipiv = (int*)matrix_ipiv->elements;
+      info = LAPACKE_sgetrs(LAPACK_ROW_MAJOR, trans, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+
+      result->elements = elements_b;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+    case nm_float64:
+    {
+      double* elements_a = (double*)matrix_a->elements;
+      double* elements_b = ALLOC_N(double, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(double)*matrix_b->count);
+      int* ipiv = (int*)matrix_ipiv->elements;
+      info = LAPACKE_dgetrs(LAPACK_ROW_MAJOR, trans, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+
+      result->elements = elements_b;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* elements_a = (float complex*)matrix_a->elements;
+      float complex* elements_b = ALLOC_N(float complex, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(float complex)*matrix_b->count);
+      int* ipiv = (int*)matrix_ipiv->elements;
+      info = LAPACKE_cgetrs(LAPACK_ROW_MAJOR, trans, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+
+      result->elements = elements_b;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* elements_a = (double complex*)matrix_a->elements;
+      double complex* elements_b = ALLOC_N(double complex, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(double complex)*matrix_b->count);
+      int* ipiv = (int*)matrix_ipiv->elements;
+      info = LAPACKE_zgetrs(LAPACK_ROW_MAJOR, trans, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+
+      result->elements = elements_b;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
       break;
     }
   }
