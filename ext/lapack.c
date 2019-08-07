@@ -741,6 +741,86 @@ VALUE nm_getrs(int argc, VALUE* argv) {
   return INT2NUM(-1);
 }
 
+/*
+ *
+ *
+ */
+VALUE nm_getri(int argc, VALUE* argv) {
+  nmatrix* matrix_lu;
+  Data_Get_Struct(argv[0], nmatrix, matrix_lu);
+
+  int m = matrix_lu->shape[0]; //no. of rows
+  int n = matrix_lu->shape[1]; //no. of cols
+  int lda = n, info = -1;
+
+  nmatrix* matrix_ipiv;
+  Data_Get_Struct(argv[1], nmatrix, matrix_ipiv);
+
+  nmatrix* result = nmatrix_new(matrix_lu->dtype, matrix_lu->stype, 2, matrix_lu->count, matrix_lu->shape, NULL);
+
+  switch(matrix_lu->dtype) {
+    case nm_bool:
+    {
+      //not supported error
+      break;
+    }
+    case nm_int:
+    {
+      //not supported error
+      break;
+    }
+    case nm_float32:
+    {
+      float* elements = ALLOC_N(float, matrix_lu->count);
+      memcpy(elements, matrix_lu->elements, sizeof(float)*matrix_lu->count);
+      int* elements_ipiv = (int*)matrix_ipiv->elements;
+      info = LAPACKE_sgetri(LAPACK_ROW_MAJOR, n, elements, lda, elements_ipiv);
+
+      result->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+    case nm_float64:
+    {
+      double* elements = ALLOC_N(double, matrix_lu->count);
+      memcpy(elements, matrix_lu->elements, sizeof(double)*matrix_lu->count);
+      int* elements_ipiv = (int*)matrix_ipiv->elements;
+      info = LAPACKE_dgetri(LAPACK_ROW_MAJOR, n, elements, lda, elements_ipiv);
+
+      result->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* elements = ALLOC_N(float complex, matrix_lu->count);
+      memcpy(elements, matrix_lu->elements, sizeof(float complex)*matrix_lu->count);
+      int* elements_ipiv = (int*)matrix_ipiv->elements;
+      info = LAPACKE_cgetri(LAPACK_ROW_MAJOR, n, elements, lda, elements_ipiv);
+
+      result->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* elements = ALLOC_N(double complex, matrix_lu->count);
+      memcpy(elements, matrix_lu->elements, sizeof(double complex)*matrix_lu->count);
+      int* elements_ipiv = (int*)matrix_ipiv->elements;
+      info = LAPACKE_zgetri(LAPACK_ROW_MAJOR, n, elements, lda, elements_ipiv);
+
+      result->elements = elements;
+
+      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+  }
+  return INT2NUM(-1);
+}
+
 // TODO: m should represent no. of rows and n no. of cols throughout
 
 /*
