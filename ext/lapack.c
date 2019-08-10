@@ -964,6 +964,123 @@ VALUE nm_posv(int argc, VALUE* argv) {
   return INT2NUM(-1);
 }
 
+/*
+ * GESV computes the solution to a real system of linear equations
+ *    A * X = B,
+ * where A is an N-by-N matrix and X and B are N-by-NRHS matrices.
+ *
+ * The LU decomposition with partial pivoting and row interchanges is
+ * used to factor A as
+ *    A = P * L * U,
+ * where P is a permutation matrix, L is unit lower triangular, and U is
+ * upper triangular. The factored form of A is then used to solve the
+ * system of equations A * X = B.
+ *
+ */
+VALUE nm_gesv(int argc, VALUE* argv) {
+  nmatrix* matrix_a;
+  Data_Get_Struct(argv[0], nmatrix, matrix_a);
+
+  int m_a = matrix_a->shape[0]; //no. of rows
+  int n_a = matrix_a->shape[1]; //no. of cols
+  int lda_a = n_a, info = -1;
+
+  nmatrix* matrix_b;
+  Data_Get_Struct(argv[1], nmatrix, matrix_b);
+
+  int m_b = matrix_b->shape[0]; //no. of rows
+  int n_b = matrix_b->shape[1]; //no. of cols
+  int lda_b = n_b;
+
+  bool lower = (bool)RTEST(argv[2]);
+  char uplo = lower ? 'L' : 'U';
+
+  nmatrix* result_lu = nmatrix_new(matrix_a->dtype, matrix_a->stype, 2, matrix_a->count, matrix_a->shape, NULL);
+  nmatrix* result_x = nmatrix_new(matrix_b->dtype, matrix_b->stype, 2, matrix_b->count, matrix_b->shape, NULL);
+
+  switch(matrix_a->dtype) {
+    case nm_bool:
+    {
+      //not supported error
+      break;
+    }
+    case nm_int:
+    {
+      //not supported error
+      break;
+    }
+    case nm_float32:
+    {
+      int* ipiv = ALLOC_N(int, n_a);
+      float* elements_a = ALLOC_N(float, matrix_a->count);
+      memcpy(elements_a, matrix_a->elements, sizeof(float)*matrix_a->count);
+      float* elements_b = ALLOC_N(float, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(float)*matrix_b->count);
+      info = LAPACKE_sgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+
+      result_lu->elements = elements_a;
+      result_x->elements = elements_b;
+
+      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
+      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      return rb_ary_new3(2, lu, x);
+      break;
+    }
+    case nm_float64:
+    {
+      int* ipiv = ALLOC_N(int, n_a);
+      double* elements_a = ALLOC_N(double, matrix_a->count);
+      memcpy(elements_a, matrix_a->elements, sizeof(double)*matrix_a->count);
+      double* elements_b = ALLOC_N(double, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(double)*matrix_b->count);
+      info = LAPACKE_dgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+
+      result_lu->elements = elements_a;
+      result_x->elements = elements_b;
+
+      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
+      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      return rb_ary_new3(2, lu, x);
+      break;
+    }
+    case nm_complex32:
+    {
+      int* ipiv = ALLOC_N(int, n_a);
+      float complex* elements_a = ALLOC_N(float complex, matrix_a->count);
+      memcpy(elements_a, matrix_a->elements, sizeof(float complex)*matrix_a->count);
+      float complex* elements_b = ALLOC_N(float complex, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(float complex)*matrix_b->count);
+      info = LAPACKE_cgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+
+      result_lu->elements = elements_a;
+      result_x->elements = elements_b;
+
+      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
+      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      return rb_ary_new3(2, lu, x);
+      break;
+    }
+    case nm_complex64:
+    {
+      int* ipiv = ALLOC_N(int, n_a);
+      double complex* elements_a = ALLOC_N(double complex, matrix_a->count);
+      memcpy(elements_a, matrix_a->elements, sizeof(double complex)*matrix_a->count);
+      double complex* elements_b = ALLOC_N(double complex, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(double complex)*matrix_b->count);
+      info = LAPACKE_zgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+
+      result_lu->elements = elements_a;
+      result_x->elements = elements_b;
+
+      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
+      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      return rb_ary_new3(2, lu, x);
+      break;
+    }
+  }
+  return INT2NUM(-1);
+}
+
 // TODO: m should represent no. of rows and n no. of cols throughout
 
 /*
