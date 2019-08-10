@@ -997,8 +997,8 @@ VALUE nm_gesv(int argc, VALUE* argv) {
 
   nmatrix* result_lu = nmatrix_new(matrix_a->dtype, matrix_a->stype, 2, matrix_a->count, matrix_a->shape, NULL);
   nmatrix* result_x = nmatrix_new(matrix_b->dtype, matrix_b->stype, 2, matrix_b->count, matrix_b->shape, NULL);
-  nmatrix* result_ipiv = nmatrix_new(matrix->dtype, matrix->stype, 1, min(m, n), NULL, NULL);
-  result_ipiv->shape[0] = min(m, n);
+  nmatrix* result_ipiv = nmatrix_new(nm_int, matrix_a->stype, 1, n_a, NULL, NULL);
+  result_ipiv->shape[0] = n_a;
 
   switch(matrix_a->dtype) {
     case nm_bool:
@@ -1085,6 +1085,61 @@ VALUE nm_gesv(int argc, VALUE* argv) {
       VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
       VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
       return rb_ary_new3(3, lu, x, ipiv);
+      break;
+    }
+  }
+  return INT2NUM(-1);
+}
+
+/*
+ * LANGE returns the value of the one norm, or the Frobenius norm, or
+ * the infinity norm, or the element of largest absolute value of a
+ * real matrix A.
+ *
+ */
+VALUE nm_lange(int argc, VALUE* argv) {
+  nmatrix* matrix;
+  Data_Get_Struct(argv[0], nmatrix, matrix);
+
+  int m = matrix->shape[0]; //no. of rows
+  int n = matrix->shape[1]; //no. of cols
+  int lda = n;
+
+  char norm = NUM2CHAR(argv[1]);
+
+  switch(matrix->dtype) {
+    case nm_bool:
+    {
+      //not supported error
+      break;
+    }
+    case nm_int:
+    {
+      //not supported error
+      break;
+    }
+    case nm_float32:
+    {
+      float val = LAPACKE_slange(LAPACK_ROW_MAJOR, norm, m, n, matrix->elements, lda);
+      return val;
+      break;
+    }
+    case nm_float64:
+    {
+      double val = LAPACKE_dlange(LAPACK_ROW_MAJOR, norm, m, n, matrix->elements, lda);
+      return val;
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex val = LAPACKE_clange(LAPACK_ROW_MAJOR, norm, m, n, matrix->elements, lda);
+      return val;
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex val = LAPACKE_zlange(LAPACK_ROW_MAJOR, norm, m, n, matrix->elements, lda);
+      return val;
       break;
     }
   }
