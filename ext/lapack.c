@@ -742,7 +742,11 @@ VALUE nm_getrs(int argc, VALUE* argv) {
 }
 
 /*
- *
+ * GETRI computes the inverse of a matrix using the LU factorization
+ * computed by GETRF.
+ * 
+ * This method inverts U and then computes inv(A) by solving the system
+ * inv(A)*L = inv(U) for inv(A).
  *
  */
 VALUE nm_getri(int argc, VALUE* argv) {
@@ -815,6 +819,145 @@ VALUE nm_getri(int argc, VALUE* argv) {
       result->elements = elements;
 
       return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      break;
+    }
+  }
+  return INT2NUM(-1);
+}
+
+
+/*
+ * GELSS computes the minimum norm solution to a real linear least
+ * squares problem:
+ *
+ * Minimize 2-norm(| b - A*x |).
+ *
+ * using the singular value decomposition (SVD) of A. A is an M-by-N
+ * matrix which may be rank-deficient.
+ *
+ * Several right hand side vectors b and solution vectors x can be
+ * handled in a single call; they are stored as the columns of the
+ * M-by-NRHS right hand side matrix B and the N-by-NRHS solution matrix
+ * X.
+ *
+ * The effective rank of A is determined by treating as zero those
+ * singular values which are less than RCOND times the largest singular
+ * value.
+ *
+ */
+VALUE nm_gelss(int argc, VALUE* argv) {
+  //TODO
+  return INT2NUM(-1);
+}
+
+/*
+ * POSV computes the solution to a real system of linear equations
+ *    A * X = B,
+ * where A is an N-by-N symmetric positive definite matrix and X and B
+ * are N-by-NRHS matrices.
+ *
+ * The Cholesky decomposition is used to factor A as
+ *    A = U**T* U,  if UPLO = 'U', or
+ *    A = L * L**T,  if UPLO = 'L',
+ * where U is an upper triangular matrix and L is a lower triangular
+ * matrix. The factored form of A is then used to solve the system of
+ * equations A * X = B.
+ *
+ */
+VALUE nm_posv(int argc, VALUE* argv) {
+  nmatrix* matrix_a;
+  Data_Get_Struct(argv[0], nmatrix, matrix_a);
+
+  int m_a = matrix_a->shape[0]; //no. of rows
+  int n_a = matrix_a->shape[1]; //no. of cols
+  int lda_a = n_a, info = -1;
+
+  nmatrix* matrix_b;
+  Data_Get_Struct(argv[1], nmatrix, matrix_b);
+
+  int m_b = matrix_b->shape[0]; //no. of rows
+  int n_b = matrix_b->shape[1]; //no. of cols
+  int lda_b = n_b;
+
+  bool lower = (bool)RTEST(argv[2]);
+  char uplo = lower ? 'L' : 'U';
+
+  nmatrix* result_c = nmatrix_new(matrix_a->dtype, matrix_a->stype, 2, matrix_a->count, matrix_a->shape, NULL);
+  nmatrix* result_x = nmatrix_new(matrix_b->dtype, matrix_b->stype, 2, matrix_b->count, matrix_b->shape, NULL);
+
+  switch(matrix_a->dtype) {
+    case nm_bool:
+    {
+      //not supported error
+      break;
+    }
+    case nm_int:
+    {
+      //not supported error
+      break;
+    }
+    case nm_float32:
+    {
+      float* elements_a = ALLOC_N(float, matrix_a->count);
+      memcpy(elements_a, matrix_a->elements, sizeof(float)*matrix_a->count);
+      float* elements_b = ALLOC_N(float, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(float)*matrix_b->count);
+      info = LAPACKE_sposv(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
+
+      result_c->elements = elements_a;
+      result_x->elements = elements_b;
+
+      VALUE c = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_c);
+      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      return rb_ary_new3(2, c, x);
+      break;
+    }
+    case nm_float64:
+    {
+      double* elements_a = ALLOC_N(double, matrix_a->count);
+      memcpy(elements_a, matrix_a->elements, sizeof(double)*matrix_a->count);
+      double* elements_b = ALLOC_N(double, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(double)*matrix_b->count);
+      info = LAPACKE_dposv(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
+
+      result_c->elements = elements_a;
+      result_x->elements = elements_b;
+
+      VALUE c = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_c);
+      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      return rb_ary_new3(2, c, x);
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* elements_a = ALLOC_N(float complex, matrix_a->count);
+      memcpy(elements_a, matrix_a->elements, sizeof(float complex)*matrix_a->count);
+      float complex* elements_b = ALLOC_N(float complex, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(float complex)*matrix_b->count);
+      info = LAPACKE_cposv(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
+
+      result_c->elements = elements_a;
+      result_x->elements = elements_b;
+
+      VALUE c = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_c);
+      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      return rb_ary_new3(2, c, x);
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* elements_a = ALLOC_N(double complex, matrix_a->count);
+      memcpy(elements_a, matrix_a->elements, sizeof(double complex)*matrix_a->count);
+      double complex* elements_b = ALLOC_N(double complex, matrix_b->count);
+      memcpy(elements_b, matrix_b->elements, sizeof(double complex)*matrix_b->count);
+      info = LAPACKE_zposv(LAPACK_ROW_MAJOR, uplo, n_a, n_b, elements_a, lda_a, elements_b, lda_b);
+
+      result_c->elements = elements_a;
+      result_x->elements = elements_b;
+
+      VALUE c = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_c);
+      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      return rb_ary_new3(2, c, x);
       break;
     }
   }
