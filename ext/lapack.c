@@ -997,6 +997,8 @@ VALUE nm_gesv(int argc, VALUE* argv) {
 
   nmatrix* result_lu = nmatrix_new(matrix_a->dtype, matrix_a->stype, 2, matrix_a->count, matrix_a->shape, NULL);
   nmatrix* result_x = nmatrix_new(matrix_b->dtype, matrix_b->stype, 2, matrix_b->count, matrix_b->shape, NULL);
+  nmatrix* result_ipiv = nmatrix_new(matrix->dtype, matrix->stype, 1, min(m, n), NULL, NULL);
+  result_ipiv->shape[0] = min(m, n);
 
   switch(matrix_a->dtype) {
     case nm_bool:
@@ -1011,70 +1013,78 @@ VALUE nm_gesv(int argc, VALUE* argv) {
     }
     case nm_float32:
     {
-      int* ipiv = ALLOC_N(int, n_a);
+      int* ipiv_elements = ALLOC_N(int, n_a);
       float* elements_a = ALLOC_N(float, matrix_a->count);
       memcpy(elements_a, matrix_a->elements, sizeof(float)*matrix_a->count);
       float* elements_b = ALLOC_N(float, matrix_b->count);
       memcpy(elements_b, matrix_b->elements, sizeof(float)*matrix_b->count);
-      info = LAPACKE_sgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+      info = LAPACKE_sgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv_elements, elements_b, lda_b);
 
       result_lu->elements = elements_a;
       result_x->elements = elements_b;
+      result_ipiv->elements = ipiv_elements;
 
       VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
       VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
-      return rb_ary_new3(2, lu, x);
+      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      return rb_ary_new3(3, lu, x, ipiv);
       break;
     }
     case nm_float64:
     {
-      int* ipiv = ALLOC_N(int, n_a);
+      int* ipiv_elements = ALLOC_N(int, n_a);
       double* elements_a = ALLOC_N(double, matrix_a->count);
       memcpy(elements_a, matrix_a->elements, sizeof(double)*matrix_a->count);
       double* elements_b = ALLOC_N(double, matrix_b->count);
       memcpy(elements_b, matrix_b->elements, sizeof(double)*matrix_b->count);
-      info = LAPACKE_dgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+      info = LAPACKE_dgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv_elements, elements_b, lda_b);
 
       result_lu->elements = elements_a;
       result_x->elements = elements_b;
+      result_ipiv->elements = ipiv_elements;
 
       VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
       VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
-      return rb_ary_new3(2, lu, x);
+      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      return rb_ary_new3(3, lu, x, ipiv);
       break;
     }
     case nm_complex32:
     {
-      int* ipiv = ALLOC_N(int, n_a);
+      int* ipiv_elements = ALLOC_N(int, n_a);
       float complex* elements_a = ALLOC_N(float complex, matrix_a->count);
       memcpy(elements_a, matrix_a->elements, sizeof(float complex)*matrix_a->count);
       float complex* elements_b = ALLOC_N(float complex, matrix_b->count);
       memcpy(elements_b, matrix_b->elements, sizeof(float complex)*matrix_b->count);
-      info = LAPACKE_cgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+      info = LAPACKE_cgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv_elements, elements_b, lda_b);
 
       result_lu->elements = elements_a;
       result_x->elements = elements_b;
+      result_ipiv->elements = ipiv_elements;
 
       VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
       VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
-      return rb_ary_new3(2, lu, x);
+      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      return rb_ary_new3(3, lu, x, ipiv);
       break;
     }
     case nm_complex64:
     {
-      int* ipiv = ALLOC_N(int, n_a);
+      int* ipiv_elements = ALLOC_N(int, n_a);
       double complex* elements_a = ALLOC_N(double complex, matrix_a->count);
       memcpy(elements_a, matrix_a->elements, sizeof(double complex)*matrix_a->count);
       double complex* elements_b = ALLOC_N(double complex, matrix_b->count);
       memcpy(elements_b, matrix_b->elements, sizeof(double complex)*matrix_b->count);
-      info = LAPACKE_zgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv, elements_b, lda_b);
+      info = LAPACKE_zgesv(LAPACK_ROW_MAJOR, n_a, n_b, elements_a, lda_a, ipiv_elements, elements_b, lda_b);
 
       result_lu->elements = elements_a;
       result_x->elements = elements_b;
+      result_ipiv->elements = ipiv_elements;
 
       VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
       VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
-      return rb_ary_new3(2, lu, x);
+      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      return rb_ary_new3(3, lu, x, ipiv);
       break;
     }
   }
