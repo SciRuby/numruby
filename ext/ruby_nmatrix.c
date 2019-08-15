@@ -437,8 +437,6 @@ VALUE nm_orgqr(int argc, VALUE* argv);
 VALUE nm_geqp3(int argc, VALUE* argv);
 VALUE nm_potrf(int argc, VALUE* argv);
 VALUE nm_potrs(int argc, VALUE* argv);
-VALUE nm_pbtrf(int argc, VALUE* argv);
-VALUE nm_pbtrs(int argc, VALUE* argv);
 VALUE nm_gesdd(int argc, VALUE* argv);
 VALUE nm_getrf(int argc, VALUE* argv);
 VALUE nm_getrs(int argc, VALUE* argv);
@@ -452,10 +450,10 @@ VALUE nm_hegvd(int argc, VALUE* argv);
 VALUE nm_sygvd(int argc, VALUE* argv);
 VALUE nm_hegv(int argc, VALUE* argv);
 VALUE nm_sygv(int argc, VALUE* argv);
+VALUE nm_getri(int argc, VALUE* argv);
 VALUE nm_gelss(int argc, VALUE* argv);
 VALUE nm_posv(int argc, VALUE* argv);
 VALUE nm_gesv(int argc, VALUE* argv);
-VALUE nm_nrm2(int argc, VALUE* argv);
 VALUE nm_lange(int argc, VALUE* argv);
   
 VALUE nm_orth(VALUE self);
@@ -523,9 +521,16 @@ void Init_nmatrix() {
   rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
   rb_define_singleton_method(Lapack, "orgqr", nm_orgqr, -1);
   rb_define_singleton_method(Lapack, "geqp3", nm_geqp3, -1);
-  // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
-  // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
-  // rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
+  rb_define_singleton_method(Lapack, "potrf", nm_potrf, -1);
+  rb_define_singleton_method(Lapack, "potrs", nm_potrs, -1);
+  rb_define_singleton_method(Lapack, "gesdd", nm_gesdd, -1);
+  rb_define_singleton_method(Lapack, "getrf", nm_getrf, -1);
+  rb_define_singleton_method(Lapack, "getrs", nm_getrs, -1);
+  rb_define_singleton_method(Lapack, "getri", nm_getri, -1);
+  rb_define_singleton_method(Lapack, "gelss", nm_gelss, -1);
+  rb_define_singleton_method(Lapack, "posv", nm_posv, -1);
+  rb_define_singleton_method(Lapack, "gesv", nm_gesv, -1);
+  rb_define_singleton_method(Lapack, "lange", nm_lange, -1);
 
   Blas = rb_define_module("Blas");
 
