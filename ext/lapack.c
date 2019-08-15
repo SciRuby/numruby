@@ -382,13 +382,13 @@ VALUE nm_potrs(int argc, VALUE* argv) {
   Data_Get_Struct(argv[1], nmatrix, matrix_b);
 
   int m_b = matrix_b->shape[0]; //no. of rows
-  int n_b = matrix_b->shape[1]; //no. of cols
+  int n_b = 1; //no. of cols
   int lda_b = n_b;
 
   bool lower = (bool)RTEST(argv[2]);
   char uplo = lower ? 'L' : 'U';
 
-  nmatrix* result = nmatrix_new(matrix_b->dtype, matrix_b->stype, 2, matrix_b->count, matrix_b->shape, NULL);
+  nmatrix* result = nmatrix_new(matrix_b->dtype, matrix_b->stype, 1, matrix_b->count, matrix_b->shape, NULL);
 
   switch(matrix_a->dtype) {
     case nm_bool:

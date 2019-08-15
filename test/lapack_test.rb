@@ -91,7 +91,18 @@ class NMatrix::LapackTest < Minitest::Test
   end
 
   def test_potrs
+    matrix = NMatrix.new [3, 3], [2, -1, 0, -1, 2, -1, 0, -1, 2]
+    b = NMatrix.new [3], [1, 2, 3]
 
+    c = NumRuby::Lapack.potrf(matrix, true)
+    x = NumRuby::Lapack.potrs(c, b, true)
+    x_soln = NMatrix.new [3], [2.5, 4.0, 3.5]
+    assert_equal x, x_soln
+
+    c = NumRuby::Lapack.potrf(matrix, false)
+    x = NumRuby::Lapack.potrs(c, b, false)
+    x_soln = NMatrix.new [3], [2.5, 4.0, 3.5]
+    assert_equal x, x_soln
   end
 
   def test_gesdd
