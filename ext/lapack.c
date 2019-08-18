@@ -652,14 +652,17 @@ VALUE nm_getrs(int argc, VALUE* argv) {
   int n_a = matrix_a->shape[1]; //no. of cols
   int lda_a = n_a, info = -1;
 
+  nmatrix* matrix_ipiv;
+  Data_Get_Struct(argv[1], nmatrix, matrix_ipiv);
+
   nmatrix* matrix_b;
-  Data_Get_Struct(argv[1], nmatrix, matrix_b);
+  Data_Get_Struct(argv[2], nmatrix, matrix_b);
 
   int m_b = matrix_b->shape[0]; //no. of rows
-  int n_b = matrix_b->shape[1]; //no. of cols
+  int n_b = 1; //no. of cols
   int lda_b = n_b;
 
-  int tra = NUM2INT(argv[2]);
+  int tra = NUM2INT(argv[3]);
   char trans = 'N';
 
   if(tra == 1) {
@@ -669,10 +672,7 @@ VALUE nm_getrs(int argc, VALUE* argv) {
     trans = 'C';
   }
 
-  nmatrix* matrix_ipiv;
-  Data_Get_Struct(argv[3], nmatrix, matrix_ipiv);
-
-  nmatrix* result = nmatrix_new(matrix_b->dtype, matrix_b->stype, 2, matrix_b->count, matrix_b->shape, NULL);
+  nmatrix* result = nmatrix_new(matrix_b->dtype, matrix_b->stype, 1, matrix_b->count, matrix_b->shape, NULL);
 
   switch(matrix_a->dtype) {
     case nm_bool:
@@ -824,7 +824,6 @@ VALUE nm_getri(int argc, VALUE* argv) {
   }
   return INT2NUM(-1);
 }
-
 
 /*
  * GELSS computes the minimum norm solution to a real linear least

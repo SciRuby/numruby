@@ -106,27 +106,45 @@ class NMatrix::LapackTest < Minitest::Test
   end
 
   def test_gesdd
-
+    # TODO: complete nm_gesdd
   end
 
   def test_getrf
+    lu, ipiv = NumRuby::Lapack.getrf(@matrix3)
+    lu_soln = NMatrix.new [3, 3], [3.0, 5.0, 2.0, 0.333333, -1.666666, -5.666666, 0.0, 0.6, 2.4]
+    assert_equal lu, lu_soln
 
+    a = NMatrix.new [2, 2], [1, 2, 3, 4]
+    lu, ipiv = NumRuby::Lapack.getrf(a)
+    lu_soln = NMatrix.new [2, 2], [3.0, 4.0, 0.333333, 0.666666]
+    assert_equal lu, lu_soln
   end
 
   def test_getrs
+    matrix = NMatrix.new [3, 3], [2, -1, 0, -1, 2, -1, 0, -1, 2]
+    b = NMatrix.new [3], [1, 2, 3]
 
+    lu, ipiv = NumRuby::Lapack.getrf(matrix)
+    x = NumRuby::Lapack.getrs(lu, ipiv, b, 0)
+    x_soln = NMatrix.new [3], [2.5, 4.0, 3.5]
+    assert_equal x, x_soln
   end
 
   def test_getri
+    matrix = NMatrix.new [3, 3], [2, -1, 0, -1, 2, -1, 0, -1, 2]
 
+    lu, ipiv = NumRuby::Lapack.getrf(matrix)
+    inv = NumRuby::Lapack.getri(lu, ipiv)
+    inv_soln = NMatrix.new [3, 3], [0.75, 0.5, 0.25, 0.5, 1.0, 0.5, 0.25, 0.5, 0.75]
+    assert_equal inv, inv_soln
   end
 
   def test_gelss
-
+    # TODO: implement nm_gelss
   end
 
   def test_posv
-
+    
   end
 
   def test_gesv
