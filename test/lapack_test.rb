@@ -144,15 +144,39 @@ class NMatrix::LapackTest < Minitest::Test
   end
 
   def test_posv
-    
+    matrix = NMatrix.new [3, 3], [2, -1, 0, -1, 2, -1, 0, -1, 2]
+    b = NMatrix.new [3], [1, 2, 3]
+
+    c, x = NumRuby::Lapack.posv(matrix, b, true)
+    x_soln = NMatrix.new [3], [2.5, 4.0, 3.5]
+    assert_equal x, x_soln
+
+    matrix = NMatrix.new [3, 3], [2, -1, 0, -1, 2, -1, 0, -1, 2]
+    b = NMatrix.new [3], [1, 2, 3]
+
+    c, x = NumRuby::Lapack.posv(matrix, b, false)
+    x_soln = NMatrix.new [3], [2.5, 4.0, 3.5]
+    assert_equal x, x_soln
   end
 
   def test_gesv
+    matrix = NMatrix.new [3, 3], [2, -1, 0, -1, 2, -1, 0, -1, 2]
+    b = NMatrix.new [3], [1, 2, 3]
 
+    lu, x, ipiv = NumRuby::Lapack.posv(matrix, b)
+    x_soln = NMatrix.new [3], [2.5, 4.0, 3.5]
+    assert_equal x, x_soln
+
+    matrix = NMatrix.new [3, 3], [2, -1, 0, -1, 2, -1, 0, -1, 2]
+    b = NMatrix.new [3], [1, 2, 3]
+
+    lu, x, ipiv = NumRuby::Lapack.posv(matrix, b)
+    x_soln = NMatrix.new [3], [2.5, 4.0, 3.5]
+    assert_equal x, x_soln
   end
 
   def test_lange
-
+    # TODO: fix nm_lange
   end
 
   def test_pinv

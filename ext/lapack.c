@@ -875,14 +875,14 @@ VALUE nm_posv(int argc, VALUE* argv) {
   Data_Get_Struct(argv[1], nmatrix, matrix_b);
 
   int m_b = matrix_b->shape[0]; //no. of rows
-  int n_b = matrix_b->shape[1]; //no. of cols
+  int n_b = 1; //no. of cols
   int lda_b = n_b;
 
   bool lower = (bool)RTEST(argv[2]);
   char uplo = lower ? 'L' : 'U';
 
   nmatrix* result_c = nmatrix_new(matrix_a->dtype, matrix_a->stype, 2, matrix_a->count, matrix_a->shape, NULL);
-  nmatrix* result_x = nmatrix_new(matrix_b->dtype, matrix_b->stype, 2, matrix_b->count, matrix_b->shape, NULL);
+  nmatrix* result_x = nmatrix_new(matrix_b->dtype, matrix_b->stype, 1, matrix_b->count, matrix_b->shape, NULL);
 
   switch(matrix_a->dtype) {
     case nm_bool:
@@ -991,9 +991,6 @@ VALUE nm_gesv(int argc, VALUE* argv) {
   int n_b = matrix_b->shape[1]; //no. of cols
   int lda_b = n_b;
 
-  bool lower = (bool)RTEST(argv[2]);
-  char uplo = lower ? 'L' : 'U';
-
   nmatrix* result_lu = nmatrix_new(matrix_a->dtype, matrix_a->stype, 2, matrix_a->count, matrix_a->shape, NULL);
   nmatrix* result_x = nmatrix_new(matrix_b->dtype, matrix_b->stype, 2, matrix_b->count, matrix_b->shape, NULL);
   nmatrix* result_ipiv = nmatrix_new(nm_int, matrix_a->stype, 1, n_a, NULL, NULL);
@@ -1095,6 +1092,19 @@ VALUE nm_gesv(int argc, VALUE* argv) {
  * the infinity norm, or the element of largest absolute value of a
  * real matrix A.
  *
+ * LANGE =  ( max(abs(A(i,j))), NORM = 'M' or 'm'
+ *          (
+ *          ( norm1(A),         NORM = '1', 'O' or 'o'
+ *          (
+ *          ( normI(A),         NORM = 'I' or 'i'
+ *          (
+ *          ( normF(A),         NORM = 'F', 'f', 'E' or 'e'
+ *
+ * where norm1 denotes the one norm of a matrix (maximum column sum),
+ * normI denotes the infinity norm of a matrix (maximum row sum) and
+ * normF denotes the Frobenius norm of a matrix (square root of sum of
+ * squares). Note that max(abs(A(i,j))) is not a consistent matrix norm.
+ *
  */
 VALUE nm_lange(int argc, VALUE* argv) {
   nmatrix* matrix;
@@ -1104,7 +1114,8 @@ VALUE nm_lange(int argc, VALUE* argv) {
   int n = matrix->shape[1]; //no. of cols
   int lda = n;
 
-  char norm = NUM2CHAR(argv[1]);
+  char* norm_str = StringValueCStr(argv[1]);
+  char norm = norm_str[0];
 
   switch(matrix->dtype) {
     case nm_bool:
@@ -1131,13 +1142,13 @@ VALUE nm_lange(int argc, VALUE* argv) {
     }
     case nm_complex32:
     {
-      float complex val = LAPACKE_clange(LAPACK_ROW_MAJOR, norm, m, n, matrix->elements, lda);
+      float val = LAPACKE_clange(LAPACK_ROW_MAJOR, norm, m, n, matrix->elements, lda);
       return val;
       break;
     }
     case nm_complex64:
     {
-      double complex val = LAPACKE_zlange(LAPACK_ROW_MAJOR, norm, m, n, matrix->elements, lda);
+      double val = LAPACKE_zlange(LAPACK_ROW_MAJOR, norm, m, n, matrix->elements, lda);
       return val;
       break;
     }
