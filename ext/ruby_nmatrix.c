@@ -118,6 +118,181 @@ typedef struct NMATRIX_STRUCT
   sparse_storage* sp;
 }nmatrix;
 
+nmatrix* nmatrix_new(
+  nm_dtype dtype,
+  nm_stype stype,
+  size_t ndims,
+  size_t count,
+  size_t* shape,
+  void* elements
+  ) {
+  nmatrix* matrix = ALLOC(nmatrix);
+  matrix->dtype = dtype;
+  matrix->stype = stype;
+  matrix->ndims = ndims;
+  matrix->count = count;
+
+  matrix->shape = ALLOC_N(size_t, matrix->ndims);
+  if(shape != NULL) {
+    for(size_t i = 0; i < ndims; ++i) {
+      matrix->shape[i] = shape[i];
+    }
+  }
+
+  if(elements == NULL) {
+    return matrix;
+  }
+
+  switch(dtype) {
+    case nm_bool:
+    {
+      bool* temp_elements = (bool*)elements;
+      bool* matrix_elements = ALLOC_N(bool, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_int:
+    {
+      int* temp_elements = (int*)elements;
+      int* matrix_elements = ALLOC_N(int, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_float32:
+    {
+      float* temp_elements = (float*)elements;
+      float* matrix_elements = ALLOC_N(float, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_float64:
+    {
+      double* temp_elements = (double*)elements;
+      double* matrix_elements = ALLOC_N(double, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* temp_elements = (float complex*)elements;
+      float complex* matrix_elements = ALLOC_N(float complex, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* temp_elements = (double complex*)elements;
+      double complex* matrix_elements = ALLOC_N(double complex, matrix->count);
+      for(size_t i = 0; i < count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+  }
+
+  return matrix;
+}
+
+nmatrix* matrix_copy(nmatrix* original_matrix) {
+  nmatrix* matrix = ALLOC(nmatrix);
+  matrix->dtype = original_matrix->dtype;
+  matrix->stype = original_matrix->stype;
+  matrix->ndims = original_matrix->ndims;
+  matrix->count = original_matrix->count;
+
+  matrix->shape = ALLOC_N(size_t, matrix->ndims);
+  if(original_matrix->shape != NULL) {
+    for(size_t i = 0; i < original_matrix->ndims; ++i) {
+      matrix->shape[i] = original_matrix->shape[i];
+    }
+  }
+
+  if(original_matrix->elements == NULL) {
+    return matrix;
+  }
+
+  switch(original_matrix->dtype) {
+    case nm_bool:
+    {
+      bool* temp_elements = (bool*)original_matrix->elements;
+      bool* matrix_elements = ALLOC_N(bool, matrix->count);
+      for(size_t i = 0; i < original_matrix->count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_int:
+    {
+      int* temp_elements = (int*)original_matrix->elements;
+      int* matrix_elements = ALLOC_N(int, matrix->count);
+      for(size_t i = 0; i < original_matrix->count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_float32:
+    {
+      float* temp_elements = (float*)original_matrix->elements;
+      float* matrix_elements = ALLOC_N(float, matrix->count);
+      for(size_t i = 0; i < original_matrix->count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_float64:
+    {
+      double* temp_elements = (double*)original_matrix->elements;
+      double* matrix_elements = ALLOC_N(double, matrix->count);
+      for(size_t i = 0; i < original_matrix->count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_complex32:
+    {
+      float complex* temp_elements = (float complex*)original_matrix->elements;
+      float complex* matrix_elements = ALLOC_N(float complex, matrix->count);
+      for(size_t i = 0; i < original_matrix->count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+    case nm_complex64:
+    {
+      double complex* temp_elements = (double complex*)original_matrix->elements;
+      double complex* matrix_elements = ALLOC_N(double complex, matrix->count);
+      for(size_t i = 0; i < original_matrix->count; ++i) {
+        matrix_elements[i] = temp_elements[i];
+      }
+      matrix->elements = matrix_elements;
+      break;
+    }
+  }
+
+  return matrix;
+}
+
 typedef enum nm_sparse_type{
   coo,
   csc,
@@ -145,8 +320,7 @@ nm_sparse_type nm_sparse_type_from_rbsymbol(VALUE sym) {
   rb_raise(rb_eArgError, "invalid storage type symbol (:%s) specified", RSTRING_PTR(str));
 }
 
-typedef struct SPARSE_NMATRIX_STRUCT
-{
+typedef struct SPARSE_NMATRIX_STRUCT{
   nm_dtype dtype;
   nm_sparse_type sptype;
   size_t ndims;
@@ -159,6 +333,8 @@ typedef struct SPARSE_NMATRIX_STRUCT
 }sparse_nmatrix;
 
 VALUE NumRuby = Qnil;
+VALUE Lapack = Qnil;
+VALUE Blas = Qnil;
 VALUE DataTypeError = Qnil;
 VALUE ShapeError = Qnil;
 VALUE NMatrix = Qnil;
@@ -234,8 +410,10 @@ DECL_UNARY_RUBY_ACCESSOR(ceil)
 
 VALUE nm_dot(VALUE self, VALUE another);
 VALUE nm_norm2(VALUE self);
-void dgetrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, double* arr2);
 void sgetrf(const float* arr, const size_t cols, const size_t rows, int* ipiv, float* arr2);
+void dgetrf(const double* arr, const size_t cols, const size_t rows, int* ipiv, double* arr2);
+void cgetrf(const float complex* arr, const size_t cols, const size_t rows, int* ipiv, float  complex* arr2);
+void zgetrf(const double complex* arr, const size_t cols, const size_t rows, int* ipiv, double  complex* arr2);
 VALUE nm_invert(VALUE self);
 VALUE nm_solve(VALUE self, VALUE rhs_val);
 VALUE nm_det(VALUE self);
@@ -251,11 +429,36 @@ VALUE nm_lu_solve(VALUE self, VALUE rhs_val);
 VALUE nm_svd(VALUE self);
 VALUE nm_svdvals(VALUE self);
 VALUE nm_diagsvd(VALUE self);
+
+// LAPACK routines
+
+VALUE nm_geqrf(int argc, VALUE* argv);
+VALUE nm_orgqr(int argc, VALUE* argv);
+VALUE nm_geqp3(int argc, VALUE* argv);
+VALUE nm_potrf(int argc, VALUE* argv);
+VALUE nm_potrs(int argc, VALUE* argv);
+VALUE nm_gesdd(int argc, VALUE* argv);
+VALUE nm_getrf(int argc, VALUE* argv);
+VALUE nm_getrs(int argc, VALUE* argv);
+VALUE nm_ggev(int argc, VALUE* argv);
+VALUE nm_geev(int argc, VALUE* argv);
+VALUE nm_heevr(int argc, VALUE* argv);
+VALUE nm_syevr(int argc, VALUE* argv);
+VALUE nm_hegvx(int argc, VALUE* argv);
+VALUE nm_sygvx(int argc, VALUE* argv);
+VALUE nm_hegvd(int argc, VALUE* argv);
+VALUE nm_sygvd(int argc, VALUE* argv);
+VALUE nm_hegv(int argc, VALUE* argv);
+VALUE nm_sygv(int argc, VALUE* argv);
+VALUE nm_getri(int argc, VALUE* argv);
+VALUE nm_gelss(int argc, VALUE* argv);
+VALUE nm_posv(int argc, VALUE* argv);
+VALUE nm_gesv(int argc, VALUE* argv);
+VALUE nm_lange(int argc, VALUE* argv);
   
 VALUE nm_orth(VALUE self);
 VALUE nm_cholesky(VALUE self);
 VALUE nm_cholesky_solve(VALUE self);
-VALUE nm_qr(VALUE self);
 
 VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self);
 VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self);
@@ -313,6 +516,23 @@ void Init_nmatrix() {
   rb_define_singleton_method(NumRuby, "zeros",  zeros_nmatrix, -1);
   rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
   // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
+
+  Lapack = rb_define_module_under(NumRuby, "Lapack");
+  rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
+  rb_define_singleton_method(Lapack, "orgqr", nm_orgqr, -1);
+  rb_define_singleton_method(Lapack, "geqp3", nm_geqp3, -1);
+  rb_define_singleton_method(Lapack, "potrf", nm_potrf, -1);
+  rb_define_singleton_method(Lapack, "potrs", nm_potrs, -1);
+  rb_define_singleton_method(Lapack, "gesdd", nm_gesdd, -1);
+  rb_define_singleton_method(Lapack, "getrf", nm_getrf, -1);
+  rb_define_singleton_method(Lapack, "getrs", nm_getrs, -1);
+  rb_define_singleton_method(Lapack, "getri", nm_getri, -1);
+  rb_define_singleton_method(Lapack, "gelss", nm_gelss, -1);
+  rb_define_singleton_method(Lapack, "posv", nm_posv, -1);
+  rb_define_singleton_method(Lapack, "gesv", nm_gesv, -1);
+  rb_define_singleton_method(Lapack, "lange", nm_lange, -1);
+
+  Blas = rb_define_module("Blas");
 
   /*
    * Exception raised when there's a problem with data.
@@ -430,7 +650,6 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "orth", nm_orth, 0);
   rb_define_method(NMatrix, "cholesky", nm_cholesky, 0);
   rb_define_method(NMatrix, "cholesky_solve", nm_cholesky_solve, 0);
-  rb_define_method(NMatrix, "qr", nm_qr, 0);
 
   rb_define_method(NMatrix, "[]", nm_accessor_get, -1);
   rb_define_method(NMatrix, "[]=", nm_accessor_set, -1);

@@ -62,20 +62,4 @@ module NumRuby
     result
   end
 
-  def self.dot(lha, rha)
-    lha.dot(rha)
-  end
-
-  module Linalg
-    def self.inv(obj)
-      if obj.is_a?(NMatrix)
-        return obj.invert
-      end
-    end
-
-    def self.solve
-
-    end
-  end
-
 end
