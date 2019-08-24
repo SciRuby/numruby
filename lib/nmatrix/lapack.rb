@@ -106,9 +106,26 @@ module NumRuby::Linalg
     end
     m, n = matrix.shape
 
-    if pivoting == false
+    if pivoting == true
+
+    else
       qr, tau = NumRuby::Lapack.geqrf(matrix)
+    end
+
+    # calc R here for both pivot true & false
+
+    if mode == 'r'
+
+    elsif mode == 'raw'
       return [qr, tau]
     end
+
+    if m < n
+      q = NumRuby::Lapack.orgqr(qr[0...m, 0...m], tau)
+    else
+      q = NumRuby::Lapack.orgqr(qr, tau)
+    end
+
+    return q
   end
 end
