@@ -70,16 +70,42 @@ module NumRuby::Linalg
   # Matrix Decomposition
 
 
-  def self.lu(matrix)
+  def self.lu(matrix, permute_l: False)
+    if not matrix.is_a?(NMatrix)
+      raise("Invalid matrix. Not of type NMatrix.")
+    end
+    if matrix.dim != 2
+      raise("Invalid shape of matrix. Should be 2.")
+    end
 
+    lu, ipiv = NumRuby::Linalg.getrf(matrix)
+
+    # TODO: calulate p, l, u
   end
 
   def self.lu_factor(matrix)
+    if not matrix.is_a?(NMatrix)
+      raise("Invalid matrix. Not of type NMatrix.")
+    end
+    if matrix.dim != 2
+      raise("Invalid shape of matrix. Should be 2.")
+    end
+    if matrix.shape[0] != matrix.shape[1]
+      raise("Invalid shape. Expected square matrix.")
+    end
 
+    lu, ipiv = NumRuby::Linalg.getrf(matrix)
+
+    return [lu, ipiv]
   end
 
-  def self.lu_solve(matrix, rhs_val)
+  def self.lu_solve(lu, ipiv, b, trans: 0)
+    if lu.shape[0] != b.shape[0]
+      raise("Incompatibel dimensions.")
+    end
 
+    x = NumRuby::Lapack.getrs(lu, ipiv, b, trans)
+    return x
   end
 
   # Computes the SVD decomposition of matrix.
