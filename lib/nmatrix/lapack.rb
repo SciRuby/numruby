@@ -1,8 +1,20 @@
 module NumRuby::Linalg
-  def self.inv(obj)
-    if obj.is_a?(NMatrix)
-      return obj.invert
+  def self.inv(matrix)
+    if not matrix.is_a?(NMatrix)
+      raise("Invalid matrix. Not of type NMatrix.")
     end
+    if matrix.dim != 2
+      raise("Invalid shape of matrix. Should be 2.")
+    end
+    if matrix.shape[0] != matrix.shape[1]
+      raise("Invalid shape. Expected square matrix.")
+    end
+    m, n = matrix.shape
+
+    lu, ipiv = NumRuby::Lapack.getrf(matrix)
+    inv_a = NumRuby::Lapack.getri(lu, ipiv)
+
+    return inv_a
   end
 
   def self.dot(lha, rha)
@@ -13,12 +25,22 @@ module NumRuby::Linalg
 
   end
 
-  def self.solve
-
+  def self.solve(a, b, sym_pos: False, lower: False, assume_a: "gen", transposed: False)
+    # TODO: implement this and remove NMatrix.solve
   end
 
-  def self.det
+  def self.det(matrix)
+    if not matrix.is_a?(NMatrix)
+      raise("Invalid matrix. Not of type NMatrix.")
+    end
+    if matrix.dim != 2
+      raise("Invalid shape of matrix. Should be 2.")
+    end
+    if matrix.shape[0] != matrix.shape[1]
+      raise("Invalid shape. Expected square matrix.")
+    end
 
+    return matrix.det
   end
 
   def self.least_square
