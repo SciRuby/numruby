@@ -346,7 +346,7 @@ VALUE average_nmatrix(int argc, VALUE* argv);
 VALUE constant_nmatrix(int argc, VALUE* argv, double constant);
 VALUE zeros_nmatrix(int argc, VALUE* argv);
 VALUE ones_nmatrix(int argc, VALUE* argv);
-VALUE nm_broadcast_to(VALUE self, VALUE new_shape);
+VALUE nm_broadcast_to(int argc, VALUE* argv);
 //VALUE nm_broadcast_arrays(int argc, VALUE* argv)
 
 VALUE nmatrix_init(int argc, VALUE* argv, VALUE self);
@@ -518,7 +518,7 @@ void Init_nmatrix() {
   rb_define_singleton_method(NumRuby, "zeros",  zeros_nmatrix, -1);
   rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
   // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
-  rb_define_singleton_method(NumRuby, "broadcast_to", nm_broadcast_to, 2);
+  rb_define_singleton_method(NumRuby, "broadcast_to", nm_broadcast_to, -1);
   //rb_define_singleton_method(NumRuby, "broadcast_arrays", nm_broadcast_arrays, -1);
 
   Lapack = rb_define_module_under(NumRuby, "Lapack");
@@ -2019,15 +2019,15 @@ void broadcast_matrices(nmatrix* nmat1, nmatrix* nmat2) {
  *
  *
  */
-VALUE nm_broadcast_to(VALUE self, VALUE shape) {
+VALUE nm_broadcast_to(int argc, VALUE* argv) {
   nmatrix* nmat;
-  Data_Get_Struct(self, nmatrix, nmat);
+  Data_Get_Struct(argv[0], nmatrix, nmat);
 
-  size_t new_ndims = (size_t)RARRAY_LEN(shape);
+  size_t new_ndims = (size_t)RARRAY_LEN(argv[1]);
 
   size_t* new_shape = ALLOC_N(size_t, new_ndims);
   for (size_t index = 0; index < new_ndims; index++) {
-    new_shape[index] = (size_t)FIX2LONG(RARRAY_AREF(shape, index));
+    new_shape[index] = (size_t)FIX2LONG(RARRAY_AREF(argv[1], index));
   }
 
   broadcast_matrix(nmat, new_shape, new_ndims);
@@ -2056,7 +2056,19 @@ VALUE nm_##name(VALUE self, VALUE another){        \
   nmatrix* left;                                   \
   Data_Get_Struct(self, nmatrix, left);            \
                                                    \
+  nmatrix* right;                                  \
   nmatrix* result = ALLOC(nmatrix);                \
+                                                    \
+  if(rb_obj_is_kind_of(another, NMatrix) == Qtrue) {\
+    Data_Get_Struct(another, nmatrix, right);       \
+    nmatrix* left_copy = ALLOC(nmatrix);            \
+    nmatrix* right_copy = ALLOC(nmatrix);           \
+    memcpy(left_copy, left, sizeof(nmatrix));       \
+    memcpy(right_copy, right, sizeof(nmatrix));     \
+    broadcast_matrices(left_copy, right_copy);      \
+    left = left_copy;                               \
+    right = right_copy;                             \
+  }                                                \
   result->dtype = left->dtype;                     \
   result->stype = left->stype;                     \
   result->count = left->count;                     \
@@ -2078,9 +2090,6 @@ VALUE nm_##name(VALUE self, VALUE another){        \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        broadcast_matrices(left, right);                                         \
         bool* right_elements = (bool*)right->elements;                           \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                     \
@@ -2100,9 +2109,6 @@ VALUE nm_##name(VALUE self, VALUE another){        \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        broadcast_matrices(left, right);                                         \
         int* right_elements = (int*)right->elements;                             \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                     \
@@ -2122,9 +2128,6 @@ VALUE nm_##name(VALUE self, VALUE another){        \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        broadcast_matrices(left, right);                                         \
         float* right_elements = (float*)right->elements;                         \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                       \
@@ -2144,9 +2147,6 @@ VALUE nm_##name(VALUE self, VALUE another){        \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        broadcast_matrices(left, right);                                         \
         double* right_elements = (double*)right->elements;                       \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                     \
@@ -2166,9 +2166,6 @@ VALUE nm_##name(VALUE self, VALUE another){        \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        broadcast_matrices(left, right);                                         \
         complex float* right_elements = (complex float*)right->elements;         \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                       \
@@ -2188,9 +2185,6 @@ VALUE nm_##name(VALUE self, VALUE another){        \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        broadcast_matrices(left, right);                                         \
         complex double* right_elements = (complex double*)right->elements;       \
                                                                                  \
         for(size_t index = 0; index < left->count; index++){                       \
