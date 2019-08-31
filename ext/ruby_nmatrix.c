@@ -1718,7 +1718,7 @@ VALUE nm_lteq(VALUE self, VALUE another){
 size_t get_index_for_broadcast_element(size_t* prev_shape, size_t prev_ndims, size_t* state_array, size_t new_dims) {
   size_t* indices = ALLOC_N(size_t, prev_ndims);
   for(size_t i = (new_dims - prev_ndims), index = 0; i < new_dims; ++i, ++index) {
-    indices[index] = max(state_array[i], prev_shape[index] - 1);
+    indices[index] = min(state_array[i], prev_shape[index] - 1);
   }
 
   size_t new_index = 0;
@@ -1731,7 +1731,7 @@ size_t get_index_for_broadcast_element(size_t* prev_shape, size_t prev_ndims, si
   }
 
   for(size_t i = 0; i < prev_ndims; ++i) {
-    new_index += ((size_t)FIX2LONG(indices[i]) * stride[i]);
+    new_index += (indices[i] * stride[i]);
   }
   return new_index;
 }
@@ -1755,9 +1755,9 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
   }
   nmat->count = new_count;
 
-  VALUE* state_array = ALLOC_N(VALUE, new_ndims);
+  size_t* state_array = ALLOC_N(VALUE, new_ndims);
   for(size_t i = 0; i < new_ndims; ++i) {
-    state_array[i] = SIZET2NUM(0);
+    state_array[i] = 0;
   }
 
   switch(nmat->dtype) {
@@ -1773,15 +1773,15 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+          size_t curr_index_value = state_array[state_index];
 
-          if(curr_index_value == new_shape[state_index]){
+          if(curr_index_value == new_shape[state_index] - 1){
             curr_index_value = 0;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
           }
           else{
             curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
             break;
           }  
 
@@ -1804,15 +1804,15 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+          size_t curr_index_value = state_array[state_index];
 
-          if(curr_index_value == new_shape[state_index]){
+          if(curr_index_value == new_shape[state_index] - 1){
             curr_index_value = 0;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
           }
           else{
             curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
             break;
           }  
 
@@ -1835,15 +1835,15 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+          size_t curr_index_value = state_array[state_index];
 
-          if(curr_index_value == new_shape[state_index]){
+          if(curr_index_value == new_shape[state_index] - 1){
             curr_index_value = 0;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
           }
           else{
             curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
             break;
           }  
 
@@ -1866,15 +1866,15 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+          size_t curr_index_value = state_array[state_index];
 
-          if(curr_index_value == new_shape[state_index]){
+          if(curr_index_value == new_shape[state_index] - 1){
             curr_index_value = 0;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
           }
           else{
             curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
             break;
           }  
 
@@ -1897,15 +1897,15 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+          size_t curr_index_value = state_array[state_index];
 
-          if(curr_index_value == new_shape[state_index]){
+          if(curr_index_value == new_shape[state_index] - 1){
             curr_index_value = 0;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
           }
           else{
             curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
             break;
           }  
 
@@ -1928,15 +1928,15 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
 
         size_t state_index = (nmat->ndims) - 1;
         while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+          size_t curr_index_value = state_array[state_index];
 
-          if(curr_index_value == new_shape[state_index]){
+          if(curr_index_value == new_shape[state_index] - 1){
             curr_index_value = 0;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
           }
           else{
             curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
+            state_array[state_index] = curr_index_value;
             break;
           }  
 
@@ -1956,15 +1956,14 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
  * which denotes the shape these 2 matrices should be
  * broadcasted to be compatible for elementwise operations
  */
-void get_broadcast_shape(nmatrix* nmat1, nmatrix* nmat2, size_t* broadcast_shape, size_t broadcast_dims) {
+void get_broadcast_shape(nmatrix* nmat1, nmatrix* nmat2, size_t* broadcast_shape) {
   size_t* shape1 = nmat1->shape;
   size_t* shape2 = nmat2->shape;
 
   size_t ndims1 = nmat1->ndims;
   size_t ndims2 = nmat2->ndims;
 
-  broadcast_dims = max(ndims1, ndims2);
-  broadcast_shape = ALLOC_N(size_t, broadcast_dims);
+  size_t broadcast_dims = max(ndims1, ndims2);
 
   if(ndims1 > ndims2) {
     for(size_t i = 0; i < ndims1; ++i) {
@@ -1999,13 +1998,16 @@ void get_broadcast_shape(nmatrix* nmat1, nmatrix* nmat2, size_t* broadcast_shape
  * for broadcasting
  */
 void broadcast_matrices(nmatrix* nmat1, nmatrix* nmat2) {
-  size_t* broadcast_shape;
-  size_t broadcast_dims;
+  size_t ndims1 = nmat1->ndims;
+  size_t ndims2 = nmat2->ndims;
+
+  size_t broadcast_dims = max(ndims1, ndims2);
+  size_t* broadcast_shape = ALLOC_N(size_t, broadcast_dims);
 
   //check for broadcasting compatibilty
   //and raise error if incompatible
 
-  get_broadcast_shape(nmat1, nmat2, broadcast_shape, broadcast_dims);
+  get_broadcast_shape(nmat1, nmat2, broadcast_shape);
 
   broadcast_matrix(nmat1, broadcast_shape, broadcast_dims);
   broadcast_matrix(nmat2, broadcast_shape, broadcast_dims);
@@ -2017,15 +2019,15 @@ void broadcast_matrices(nmatrix* nmat1, nmatrix* nmat2) {
  *
  *
  */
-VALUE nm_broadcast_to(VALUE self, VALUE new_shape) {
+VALUE nm_broadcast_to(VALUE self, VALUE shape) {
   nmatrix* nmat;
   Data_Get_Struct(self, nmatrix, nmat);
 
-  size_t new_ndims = (size_t)RARRAY_LEN(new_shape);
+  size_t new_ndims = (size_t)RARRAY_LEN(shape);
 
   size_t* new_shape = ALLOC_N(size_t, new_ndims);
   for (size_t index = 0; index < new_ndims; index++) {
-    new_shape[index] = (size_t)FIX2LONG(RARRAY_AREF(new_shape, index));
+    new_shape[index] = (size_t)FIX2LONG(RARRAY_AREF(shape, index));
   }
 
   broadcast_matrix(nmat, new_shape, new_ndims);
