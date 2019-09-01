@@ -2069,28 +2069,39 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     left_copy = matrix_copy(left);                  \
     right_copy = matrix_copy(right);                \
     broadcast_matrices(left_copy, right_copy);      \
-  }                                                 \
-  result->dtype = left_copy->dtype;                 \
-  result->stype = left_copy->stype;                 \
-  result->count = left_copy->count;                 \
-  result->ndims = left_copy->ndims;                 \
-  result->shape = ALLOC_N(size_t, result->ndims);  \
-                                                   \
-  for(size_t index = 0; index < result->ndims; index++){             \
-    result->shape[index] = left_copy->shape[index];                       \
-  }                                                                  \
-                                                                     \
+    result->dtype = left_copy->dtype;                 \
+    result->stype = left_copy->stype;                 \
+    result->count = left_copy->count;                 \
+    result->ndims = left_copy->ndims;                 \
+    result->shape = ALLOC_N(size_t, result->ndims);  \
+                                                    \
+    for(size_t index = 0; index < result->ndims; index++){\
+      result->shape[index] = left_copy->shape[index];     \
+    }                                                     \
+  }                                                       \
+  else {                                         \
+    result->dtype = left->dtype;                 \
+    result->stype = left->stype;                 \
+    result->count = left->count;                 \
+    result->ndims = left->ndims;                 \
+    result->shape = ALLOC_N(size_t, result->ndims);   \
+                                                      \
+    for(size_t index = 0; index < result->ndims; index++){\
+      result->shape[index] = left->shape[index];          \
+    }                                                     \
+  }                                                       \
   switch (result->dtype) {                                                       \
     case nm_bool:                                                                 \
     {                                                                            \
-      bool* left_elements = (bool*)left_copy->elements;                           \
       bool* result_elements = ALLOC_N(bool, result->count);                  \
       if(RB_TYPE_P(another, T_TRUE) || RB_TYPE_P(another, T_FALSE)){           \
-        for(size_t index = 0; index < left_copy->count; index++){                     \
+        bool* left_elements = (bool*)left->elements;                       \
+        for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (another ? Qtrue : Qfalse);      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
+        bool* left_elements = (bool*)left_copy->elements;                        \
         bool* right_elements = (bool*)right_copy->elements;                           \
                                                                                  \
         for(size_t index = 0; index < left_copy->count; index++){                     \
@@ -2102,14 +2113,15 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     }                                                                            \
     case nm_int:                                                                 \
     {                                                                            \
-      int* left_elements = (int*)left_copy->elements;                           \
       int* result_elements = ALLOC_N(int, result->count);                  \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
-        for(size_t index = 0; index < left_copy->count; index++){                     \
+        int* left_elements = (int*)left->elements;                               \
+        for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
+        int* left_elements = (int*)left_copy->elements;                          \
         int* right_elements = (int*)right_copy->elements;                             \
                                                                                  \
         for(size_t index = 0; index < left_copy->count; index++){                     \
@@ -2121,14 +2133,15 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     }                                                                            \
     case nm_float32:                                                             \
     {                                                                            \
-      float* left_elements = (float*)left_copy->elements;                             \
       float* result_elements = ALLOC_N(float, result->count);                    \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
-        for(size_t index = 0; index < left_copy->count; index++){                     \
+        float* left_elements = (float*)left->elements;                           \
+        for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
+        float* left_elements = (float*)left_copy->elements;                      \
         float* right_elements = (float*)right_copy->elements;                         \
                                                                                  \
         for(size_t index = 0; index < left_copy->count; index++){                       \
@@ -2140,14 +2153,15 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     }                                                                             \
     case nm_float64:                                                             \
     {                                                                            \
-      double* left_elements = (double*)left_copy->elements;                           \
       double* result_elements = ALLOC_N(double, result->count);                  \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
-        for(size_t index = 0; index < left_copy->count; index++){                     \
+        double* left_elements = (double*)left->elements;                    \
+        for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
+        double* left_elements = (double*)left_copy->elements;                    \
         double* right_elements = (double*)right_copy->elements;                       \
                                                                                  \
         for(size_t index = 0; index < left_copy->count; index++){                     \
@@ -2159,14 +2173,15 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     }                                                                            \
     case nm_complex32:                                                             \
     {                                                                            \
-      complex float* left_elements = (complex float*)left_copy->elements;                             \
       complex float* result_elements = ALLOC_N(complex float, result->count);                    \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
-        for(size_t index = 0; index < left_copy->count; index++){                     \
+        complex float* left_elements = (complex float*)left->elements;      \
+        for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
+        complex float* left_elements = (complex float*)left_copy->elements;      \
         complex float* right_elements = (complex float*)right_copy->elements;         \
                                                                                  \
         for(size_t index = 0; index < left_copy->count; index++){                       \
@@ -2178,14 +2193,15 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     }                                                                              \
     case nm_complex64:                                                             \
     {                                                                            \
-      complex double* left_elements = (complex double*)left_copy->elements;                             \
       complex double* result_elements = ALLOC_N(complex double, result->count);                    \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
-        for(size_t index = 0; index < left_copy->count; index++){                     \
+        complex double* left_elements = (complex double*)left->elements;    \
+        for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
+        complex double* left_elements = (complex double*)left_copy->elements;    \
         complex double* right_elements = (complex double*)right_copy->elements;       \
                                                                                  \
         for(size_t index = 0; index < left_copy->count; index++){                       \
