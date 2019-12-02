@@ -346,6 +346,8 @@ VALUE average_nmatrix(int argc, VALUE* argv);
 VALUE constant_nmatrix(int argc, VALUE* argv, double constant);
 VALUE zeros_nmatrix(int argc, VALUE* argv);
 VALUE ones_nmatrix(int argc, VALUE* argv);
+VALUE nm_broadcast_to(int argc, VALUE* argv);
+//VALUE nm_broadcast_arrays(int argc, VALUE* argv)
 
 VALUE nmatrix_init(int argc, VALUE* argv, VALUE self);
 VALUE nm_get_dim(VALUE self);
@@ -516,6 +518,8 @@ void Init_nmatrix() {
   rb_define_singleton_method(NumRuby, "zeros",  zeros_nmatrix, -1);
   rb_define_singleton_method(NumRuby, "ones",   ones_nmatrix, -1);
   // rb_define_singleton_method(NumRuby, "matrix", nmatrix_init, -1);
+  rb_define_singleton_method(NumRuby, "broadcast_to", nm_broadcast_to, -1);
+  //rb_define_singleton_method(NumRuby, "broadcast_arrays", nm_broadcast_arrays, -1);
 
   Lapack = rb_define_module_under(NumRuby, "Lapack");
   rb_define_singleton_method(Lapack, "geqrf", nm_geqrf, -1);
@@ -1706,188 +1710,401 @@ VALUE nm_lteq(VALUE self, VALUE another){
 }
 
 /*
- * Addition operator. Returns a matrix which is the elementwise addition
- * of the two operand matrices.
+ * get_index_for_broadcast_element takes prev_shape,
+ * and state_array and returns the index
+ * for location in flat list of matrix before broadcasting
  *
  */
-VALUE nm_add(VALUE self, VALUE another){
-  nmatrix* left;
-  Data_Get_Struct(self, nmatrix, left);
-
-  nmatrix* result = ALLOC(nmatrix);
-  result->dtype = left->dtype;
-  result->stype = left->stype;
-  result->count = left->count;
-  result->ndims = left->ndims;
-  result->shape = ALLOC_N(size_t, result->ndims);
-
-  for(size_t index = 0; index < result->ndims; index++){
-    result->shape[index] = left->shape[index];
+size_t get_index_for_broadcast_element(size_t* prev_shape, size_t prev_ndims, size_t* state_array, size_t new_dims) {
+  size_t* indices = ALLOC_N(size_t, prev_ndims);
+  for(size_t i = (new_dims - prev_ndims), index = 0; i < new_dims; ++i, ++index) {
+    indices[index] = min(state_array[i], prev_shape[index] - 1);
   }
 
-  switch (result->dtype) {
+  size_t new_index = 0;
+  size_t* stride = ALLOC_N(size_t, prev_ndims);
+  
+  size_t val = 1;
+  for(size_t i = prev_ndims; i > 0; --i) {
+    stride[i - 1] = val;
+    val *= prev_shape[i - 1];
+  }
+
+  for(size_t i = 0; i < prev_ndims; ++i) {
+    new_index += (indices[i] * stride[i]);
+  }
+  return new_index;
+}
+
+/*
+ * broadcast_matrix takes the matrix nmat
+ * and broadcasts it to new_shape if it's 
+ * valid according to broadcasting rules,
+ * else raises an error
+ */
+void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
+  size_t prev_ndims = nmat->ndims;
+  size_t* prev_shape = nmat->shape;
+
+  nmat->ndims = new_ndims;
+  nmat->shape = ALLOC_N(size_t, new_ndims);
+  for(size_t i = 0; i < new_ndims; ++i) {
+    nmat->shape[i] = new_shape[i];
+  }
+
+  size_t new_count = 1;
+  for(size_t i = 0; i < new_ndims; ++i) {
+    new_count *= new_shape[i];
+  }
+  nmat->count = new_count;
+
+  size_t* state_array = ALLOC_N(VALUE, new_ndims);
+  for(size_t i = 0; i < new_ndims; ++i) {
+    state_array[i] = 0;
+  }
+
+  switch(nmat->dtype) {
     case nm_bool:
     {
-      bool* left_elements = (bool*)left->elements;
-      bool* result_elements = ALLOC_N(bool, result->count);
-      if(RB_TYPE_P(another, T_TRUE) || RB_TYPE_P(another, T_FALSE)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + (another ? Qtrue : Qfalse);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        bool* right_elements = (bool*)right->elements;
+      bool* nmat_elements = (bool*)nmat->elements;
 
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
+      bool* new_elements = ALLOC_N(bool, new_count);
+
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = state_array[state_index];
+
+          if(curr_index_value == new_shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = curr_index_value;
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = curr_index_value;
+            break;
+          }  
+
+          state_index--;        
         }
       }
-      result->elements = result_elements;
+
+      nmat->elements = new_elements;
       break;
     }
     case nm_int:
     {
-      int* left_elements = (int*)left->elements;
-      int* result_elements = ALLOC_N(int, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        int* right_elements = (int*)right->elements;
+      int* nmat_elements = (int*)nmat->elements;
 
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
-        }
-      }
-      result->elements = result_elements;
-      break;
-    }
-    case nm_float64:
-    {
-      double* left_elements = (double*)left->elements;
-      double* result_elements = ALLOC_N(double, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        double* right_elements = (double*)right->elements;
+      int* new_elements = ALLOC_N(int, new_count);
 
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = state_array[state_index];
+
+          if(curr_index_value == new_shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = curr_index_value;
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = curr_index_value;
+            break;
+          }  
+
+          state_index--;        
         }
       }
-      result->elements = result_elements;
+
+      nmat->elements = new_elements;
       break;
     }
     case nm_float32:
     {
-      float* left_elements = (float*)left->elements;
-      float* result_elements = ALLOC_N(float, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        float* right_elements = (float*)right->elements;
+      float* nmat_elements = (float*)nmat->elements;
 
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
+      float* new_elements = ALLOC_N(float, new_count);
+
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = state_array[state_index];
+
+          if(curr_index_value == new_shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = curr_index_value;
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = curr_index_value;
+            break;
+          }  
+
+          state_index--;        
         }
       }
-      result->elements = result_elements;
+
+      nmat->elements = new_elements;
+      break;
+    }
+    case nm_float64:
+    {
+      double* nmat_elements = (double*)nmat->elements;
+
+      double* new_elements = ALLOC_N(double, new_count);
+
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = state_array[state_index];
+
+          if(curr_index_value == new_shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = curr_index_value;
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = curr_index_value;
+            break;
+          }  
+
+          state_index--;        
+        }
+      }
+
+      nmat->elements = new_elements;
       break;
     }
     case nm_complex32:
     {
-      complex float* left_elements = (complex float*)left->elements;
-      complex float* result_elements = ALLOC_N(complex float, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        complex float* right_elements = (complex float*)right->elements;
+      float complex* nmat_elements = (float complex*)nmat->elements;
 
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
+      float complex* new_elements = ALLOC_N(float complex, new_count);
+
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = state_array[state_index];
+
+          if(curr_index_value == new_shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = curr_index_value;
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = curr_index_value;
+            break;
+          }  
+
+          state_index--;        
         }
       }
-      result->elements = result_elements;
+
+      nmat->elements = new_elements;
       break;
     }
     case nm_complex64:
     {
-      complex double* left_elements = (complex double*)left->elements;
-      complex double* result_elements = ALLOC_N(complex double, result->count);
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + NUM2DBL(another);
-        }
-      }
-      else{
-        nmatrix* right;
-        Data_Get_Struct(another, nmatrix, right);
-        complex double* right_elements = (complex double*)right->elements;
+      double complex* nmat_elements = (double complex*)nmat->elements;
 
-        for(size_t index = 0; index < left->count; index++){
-          result_elements[index] = left_elements[index] + right_elements[index];
+      double complex* new_elements = ALLOC_N(double complex, new_count);
+
+      for(size_t i = 0; i < new_count; ++i){
+        size_t nmat_index = get_index_for_broadcast_element(prev_shape, prev_ndims, state_array, new_ndims);
+        new_elements[i] = nmat_elements[nmat_index];
+
+        size_t state_index = (nmat->ndims) - 1;
+        while(true){
+          size_t curr_index_value = state_array[state_index];
+
+          if(curr_index_value == new_shape[state_index] - 1){
+            curr_index_value = 0;
+            state_array[state_index] = curr_index_value;
+          }
+          else{
+            curr_index_value++;
+            state_array[state_index] = curr_index_value;
+            break;
+          }  
+
+          state_index--;        
         }
       }
-      result->elements = result_elements;
+
+      nmat->elements = new_elements;
       break;
     }
   }
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
+/*
+ * get_broadcast_shape takes two matrices
+ * nmat1, nmat2 and calculates broadcast_shape, broadcast_dims
+ * which denotes the shape these 2 matrices should be
+ * broadcasted to be compatible for elementwise operations
+ */
+void get_broadcast_shape(nmatrix* nmat1, nmatrix* nmat2, size_t* broadcast_shape) {
+  size_t* shape1 = nmat1->shape;
+  size_t* shape2 = nmat2->shape;
+
+  size_t ndims1 = nmat1->ndims;
+  size_t ndims2 = nmat2->ndims;
+
+  size_t broadcast_dims = max(ndims1, ndims2);
+
+  if(ndims1 > ndims2) {
+    for(size_t i = 0; i < ndims1; ++i) {
+      broadcast_shape[i] = shape1[i];
+    }
+    for(size_t i = 0; i < ndims2; ++i) {
+      size_t res_index = (ndims1 - ndims2) + i;
+      if(shape1[res_index] != shape2[i] && min(shape1[res_index], shape2[i]) > 1) {
+        //raise broadcast compatibility error
+      }
+      broadcast_shape[res_index] = max(shape1[res_index], shape2[i]);
+    }
+  }
+  else {
+    for(size_t i = 0; i < ndims2; ++i) {
+      broadcast_shape[i] = shape2[i];
+    }
+    for(size_t i = 0; i < ndims1; ++i) {
+      size_t res_index = (ndims2 - ndims1) + i;
+      if(shape1[i] != shape2[res_index] && min(shape1[i], shape2[res_index]) > 1) {
+        //raise broadcast compatibility error
+      }
+      broadcast_shape[res_index] = max(shape1[i], shape2[res_index]);
+    }
+  }
+}
+
+/*
+ * broadcast_matrices takes two matrices nmat1, nmat2
+ * and broadcasts them against each other.
+ * Raises error if matrices are incompatible
+ * for broadcasting
+ */
+void broadcast_matrices(nmatrix* nmat1, nmatrix* nmat2) {
+  size_t ndims1 = nmat1->ndims;
+  size_t ndims2 = nmat2->ndims;
+
+  size_t broadcast_dims = max(ndims1, ndims2);
+  size_t* broadcast_shape = ALLOC_N(size_t, broadcast_dims);
+
+  //check for broadcasting compatibilty
+  //and raise error if incompatible
+
+  get_broadcast_shape(nmat1, nmat2, broadcast_shape);
+
+  broadcast_matrix(nmat1, broadcast_shape, broadcast_dims);
+  broadcast_matrix(nmat2, broadcast_shape, broadcast_dims);
+}
+
+/*
+ * Returns a broadcasted matrix created from
+ * input matrix and having given shape
+ *
+ *
+ */
+VALUE nm_broadcast_to(int argc, VALUE* argv) {
+  nmatrix* nmat;
+  Data_Get_Struct(argv[0], nmatrix, nmat);
+
+  size_t new_ndims = (size_t)RARRAY_LEN(argv[1]);
+
+  size_t* new_shape = ALLOC_N(size_t, new_ndims);
+  for (size_t index = 0; index < new_ndims; index++) {
+    new_shape[index] = (size_t)FIX2LONG(RARRAY_AREF(argv[1], index));
+  }
+
+  broadcast_matrix(nmat, new_shape, new_ndims);
+
+  return Data_Wrap_Struct(NMatrix, NULL, nm_free, nmat);
+}
+
+/*
+ * Takes any number of matrices and broadcasts them 
+ * against each other and store resulting broadcasted 
+ * matrices as array of NMatrix objects
+ *
+ */
+VALUE nm_broadcast_arrays(int argc, VALUE* argv) {
+  return Qnil;
+}
+
+/*
+ * Elementiwise operator. Returns a matrix which is the elementwise operation
+ * of the two operands (left one is always a matrix, right one could be 
+ * a matrix of a single value).
+ *
+ */
 #define DEF_ELEMENTWISE_RUBY_ACCESSOR(name, oper)  \
 VALUE nm_##name(VALUE self, VALUE another){        \
   nmatrix* left;                                   \
   Data_Get_Struct(self, nmatrix, left);            \
                                                    \
+  nmatrix* right;                                  \
   nmatrix* result = ALLOC(nmatrix);                \
-  result->dtype = left->dtype;                     \
-  result->stype = left->stype;                     \
-  result->count = left->count;                     \
-  result->ndims = left->ndims;                     \
-  result->shape = ALLOC_N(size_t, result->ndims);  \
                                                    \
-  for(size_t index = 0; index < result->ndims; index++){             \
-    result->shape[index] = left->shape[index];                       \
-  }                                                                  \
-                                                                     \
+  nmatrix* left_copy;                              \
+  nmatrix* right_copy;                             \
+  if(rb_obj_is_kind_of(another, NMatrix) == Qtrue) {\
+    Data_Get_Struct(another, nmatrix, right);       \
+    left_copy = matrix_copy(left);                  \
+    right_copy = matrix_copy(right);                \
+    broadcast_matrices(left_copy, right_copy);      \
+    result->dtype = left_copy->dtype;                 \
+    result->stype = left_copy->stype;                 \
+    result->count = left_copy->count;                 \
+    result->ndims = left_copy->ndims;                 \
+    result->shape = ALLOC_N(size_t, result->ndims);  \
+                                                    \
+    for(size_t index = 0; index < result->ndims; index++){\
+      result->shape[index] = left_copy->shape[index];     \
+    }                                                     \
+  }                                                       \
+  else {                                         \
+    result->dtype = left->dtype;                 \
+    result->stype = left->stype;                 \
+    result->count = left->count;                 \
+    result->ndims = left->ndims;                 \
+    result->shape = ALLOC_N(size_t, result->ndims);   \
+                                                      \
+    for(size_t index = 0; index < result->ndims; index++){\
+      result->shape[index] = left->shape[index];          \
+    }                                                     \
+  }                                                       \
   switch (result->dtype) {                                                       \
     case nm_bool:                                                                 \
     {                                                                            \
-      bool* left_elements = (bool*)left->elements;                           \
       bool* result_elements = ALLOC_N(bool, result->count);                  \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(RB_TYPE_P(another, T_TRUE) || RB_TYPE_P(another, T_FALSE)){           \
+        bool* left_elements = (bool*)left->elements;                       \
         for(size_t index = 0; index < left->count; index++){                     \
-          result_elements[index] = left_elements[index] + NUM2DBL(another);      \
+          result_elements[index] = (left_elements[index]) oper (another ? Qtrue : Qfalse);      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        bool* right_elements = (bool*)right->elements;                       \
+        bool* left_elements = (bool*)left_copy->elements;                        \
+        bool* right_elements = (bool*)right_copy->elements;                           \
                                                                                  \
-        for(size_t index = 0; index < left->count; index++){                     \
+        for(size_t index = 0; index < left_copy->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
         }                                                                        \
       }                                                                          \
@@ -1896,40 +2113,18 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     }                                                                            \
     case nm_int:                                                                 \
     {                                                                            \
-      int* left_elements = (int*)left->elements;                           \
       int* result_elements = ALLOC_N(int, result->count);                  \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+        int* left_elements = (int*)left->elements;                               \
         for(size_t index = 0; index < left->count; index++){                     \
-          result_elements[index] = left_elements[index] + NUM2DBL(another);      \
+          result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        int* right_elements = (int*)right->elements;                       \
+        int* left_elements = (int*)left_copy->elements;                          \
+        int* right_elements = (int*)right_copy->elements;                             \
                                                                                  \
-        for(size_t index = 0; index < left->count; index++){                     \
-          result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
-        }                                                                        \
-      }                                                                          \
-      result->elements = result_elements;                                        \
-      break;                                                                     \
-    }                                                                            \
-    case nm_float64:                                                             \
-    {                                                                            \
-      double* left_elements = (double*)left->elements;                           \
-      double* result_elements = ALLOC_N(double, result->count);                  \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
-        for(size_t index = 0; index < left->count; index++){                     \
-          result_elements[index] = left_elements[index] + NUM2DBL(another);      \
-        }                                                                        \
-      }                                                                          \
-      else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        double* right_elements = (double*)right->elements;                       \
-                                                                                 \
-        for(size_t index = 0; index < left->count; index++){                     \
+        for(size_t index = 0; index < left_copy->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
         }                                                                        \
       }                                                                          \
@@ -1938,40 +2133,58 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     }                                                                            \
     case nm_float32:                                                             \
     {                                                                            \
-      float* left_elements = (float*)left->elements;                             \
       float* result_elements = ALLOC_N(float, result->count);                    \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+        float* left_elements = (float*)left->elements;                           \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        float* right_elements = (float*)right->elements;                         \
+        float* left_elements = (float*)left_copy->elements;                      \
+        float* right_elements = (float*)right_copy->elements;                         \
                                                                                  \
-        for(size_t index = 0; index < left->count; index++){                       \
+        for(size_t index = 0; index < left_copy->count; index++){                       \
           result_elements[index] = (left_elements[index]) oper (right_elements[index]);   \
         }                                                                          \
       }                                                                            \
       result->elements = result_elements;                                          \
       break;                                                                       \
     }                                                                             \
-    case nm_complex32:                                                             \
+    case nm_float64:                                                             \
     {                                                                            \
-      complex float* left_elements = (complex float*)left->elements;                             \
-      complex float* result_elements = ALLOC_N(complex float, result->count);                    \
+      double* result_elements = ALLOC_N(double, result->count);                  \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+        double* left_elements = (double*)left->elements;                    \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        complex float* right_elements = (complex float*)right->elements;                         \
+        double* left_elements = (double*)left_copy->elements;                    \
+        double* right_elements = (double*)right_copy->elements;                       \
                                                                                  \
-        for(size_t index = 0; index < left->count; index++){                       \
+        for(size_t index = 0; index < left_copy->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
+        }                                                                        \
+      }                                                                          \
+      result->elements = result_elements;                                        \
+      break;                                                                     \
+    }                                                                            \
+    case nm_complex32:                                                             \
+    {                                                                            \
+      complex float* result_elements = ALLOC_N(complex float, result->count);                    \
+      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+        complex float* left_elements = (complex float*)left->elements;      \
+        for(size_t index = 0; index < left->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
+        }                                                                        \
+      }                                                                          \
+      else{                                                                      \
+        complex float* left_elements = (complex float*)left_copy->elements;      \
+        complex float* right_elements = (complex float*)right_copy->elements;         \
+                                                                                 \
+        for(size_t index = 0; index < left_copy->count; index++){                       \
           result_elements[index] = (left_elements[index]) oper (right_elements[index]);   \
         }                                                                          \
       }                                                                            \
@@ -1980,19 +2193,18 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     }                                                                              \
     case nm_complex64:                                                             \
     {                                                                            \
-      complex double* left_elements = (complex double*)left->elements;                             \
       complex double* result_elements = ALLOC_N(complex double, result->count);                    \
       if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+        complex double* left_elements = (complex double*)left->elements;    \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
         }                                                                        \
       }                                                                          \
       else{                                                                      \
-        nmatrix* right;                                                          \
-        Data_Get_Struct(another, nmatrix, right);                                \
-        complex double* right_elements = (complex double*)right->elements;                         \
+        complex double* left_elements = (complex double*)left_copy->elements;    \
+        complex double* right_elements = (complex double*)right_copy->elements;       \
                                                                                  \
-        for(size_t index = 0; index < left->count; index++){                       \
+        for(size_t index = 0; index < left_copy->count; index++){                       \
           result_elements[index] = (left_elements[index]) oper (right_elements[index]);   \
         }                                                                          \
       }                                                                            \
@@ -2003,9 +2215,11 @@ VALUE nm_##name(VALUE self, VALUE another){        \
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);                         \
 }
 
+DEF_ELEMENTWISE_RUBY_ACCESSOR(add, +)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(subtract, -)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(multiply, *)
 DEF_ELEMENTWISE_RUBY_ACCESSOR(divide, /)
+//DEF_ELEMENTWISE_RUBY_ACCESSOR(divide, ^) this should be for exponentiation (or use **)
 
 /*
  *  Elementwise sin operator.
