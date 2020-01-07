@@ -11,7 +11,7 @@ Fast Numerical Linear Algebra Library for Ruby
 ## Installation
 
 ```sh
-git clone https://github.com/sciruby/numruby
+git clone https://github.com/SciRuby/numruby
 cd numruby/
 gem install bundler
 bundle install
