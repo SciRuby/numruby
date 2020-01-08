@@ -1,14 +1,29 @@
-# numruby (nmatrix_reloaded)
-
-Reimplementing NMatrix for fun
-
-## NMatrix
+# NumRuby
 
 [![Build Status](https://travis-ci.org/sciruby/numruby.svg?branch=master)](https://travis-ci.org/sciruby/numruby)
 
-Fast Numerical Linear Algebra Library for Ruby
+Fast Numerical Linear Algebra Library for Ruby. NMatrix reimplementation.
 
 ## Installation
+
+### Install dependency libraries
+
+**Debian/Ubuntu**
+
+```sh
+sudo apt-get install libopenblas-dev
+sudo apt-get install liblapack-dev
+sudo apt-get install liblapacke-dev
+```
+
+**Mac OSX**
+
+```sh
+brew install openblas
+brew install lapack
+```
+
+### Build the library
 
 ```sh
 git clone https://github.com/sciruby/numruby
@@ -18,13 +33,13 @@ bundle install
 rake compile
 ```
 
-Run the tests using
+### Run tests
 
 ```sh
 rake test
 ```
 
-If you want to try out the code without installing:
+### Try out the code without installing
 
 ```sh
 rake pry
@@ -32,10 +47,9 @@ rake pry
 
 ## Speed Test
 
-```
+```sh
 ruby benchmark/bench.rb
 ```
-
 
 ## Documentation
 
@@ -43,7 +57,7 @@ ruby benchmark/bench.rb
 
 [Yard](https://www.rubydoc.info/gems/yard/) is used for documenting class and methods following yard [tags](https://www.rubydoc.info/gems/yard/file/docs/Tags.md). To generate the static documentation in doc folder run `yard doc`. To serve it in localhost run `yard server`.
 
-# LICENSE
+## LICENSE
 
 This software is distributed under the [BSD 3-Clause License](LICENSE).
 
