@@ -22,6 +22,8 @@ HEADER_DIRS = [
   '/usr/local/include',
   INCLUDEDIR,
   '/usr/include',
+  '/usr/local/opt/openblas/include',
+  '/usr/local/opt/lapack/include',
 ]
 
 LIB_DIRS = [
@@ -29,6 +31,8 @@ LIB_DIRS = [
   '/usr/local/lib',
   LIBDIR,
   '/usr/lib',
+  '/usr/local/opt/openblas/lib',
+  '/usr/local/opt/lapack/lib',
 ]
 
 dir_config(extension_name, HEADER_DIRS, LIB_DIRS)
