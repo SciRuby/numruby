@@ -1758,7 +1758,7 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
   }
   nmat->count = new_count;
 
-  size_t* state_array = ALLOC_N(VALUE, new_ndims);
+  size_t* state_array = ALLOC_N(size_t, new_ndims);
   for(size_t i = 0; i < new_ndims; ++i) {
     state_array[i] = 0;
   }
@@ -1786,7 +1786,10 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
             curr_index_value++;
             state_array[state_index] = curr_index_value;
             break;
-          }  
+          }
+
+          if(state_index == 0)
+            break;
 
           state_index--;        
         }
@@ -1817,7 +1820,10 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
             curr_index_value++;
             state_array[state_index] = curr_index_value;
             break;
-          }  
+          }
+
+          if(state_index == 0)
+            break;
 
           state_index--;        
         }
@@ -1848,7 +1854,10 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
             curr_index_value++;
             state_array[state_index] = curr_index_value;
             break;
-          }  
+          }
+
+          if(state_index == 0)
+            break;
 
           state_index--;        
         }
@@ -1879,7 +1888,10 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
             curr_index_value++;
             state_array[state_index] = curr_index_value;
             break;
-          }  
+          }
+
+          if(state_index == 0)
+            break;
 
           state_index--;        
         }
@@ -1910,7 +1922,10 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
             curr_index_value++;
             state_array[state_index] = curr_index_value;
             break;
-          }  
+          }
+
+          if(state_index == 0)
+            break;
 
           state_index--;        
         }
@@ -1941,7 +1956,10 @@ void broadcast_matrix(nmatrix* nmat, size_t* new_shape, size_t new_ndims) {
             curr_index_value++;
             state_array[state_index] = curr_index_value;
             break;
-          }  
+          }
+
+          if(state_index == 0)
+            break;
 
           state_index--;        
         }
