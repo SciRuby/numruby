@@ -22,7 +22,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rubocop', '>= 0.49.0'
   gem.add_development_dependency 'json', '>= 1.5.5'
   gem.add_development_dependency 'pry', '~>0.10'
-  gem.add_development_dependency 'rake', '~>10.3'
+  gem.add_development_dependency 'rake', '>= 10.3'
   gem.add_development_dependency 'rake-compiler', '~>0.8'
   gem.add_development_dependency 'rdoc', '~>4.0', '>=4.0.1'
   gem.add_development_dependency "minitest", "~> 5.0"
