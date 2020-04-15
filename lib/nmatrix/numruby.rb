@@ -73,17 +73,16 @@ module NumRuby
         m = m.stype(nm_dtype, copy=False)
         return m
       end
+    end
 
   def tril(m, k=0)
     m = Array(m)
     mask = tri(*m.shape[-2:], k=k, nm_dtype=nm_bool)
-    return where(mask, m, zeros(1, m.nm_dtype))
   end
 
   def triu(m, k=0)
     m = Array(m)
     mask = tri(*m.shape[-2:], k=k-1, nm_dtype=nm_bool)
-    return where(mask, zeros(1, m.nm_dtype), m)
   end
 
 end
