@@ -64,16 +64,16 @@ module NumRuby
 
   def self.tri(N, M=None, k=0, nm_dtype=float)
     if M is None:
-      M = N
+        M = N
 
       m = greater_equal.outer(arange(N, nm_dtype=nm_int(0, N)),
-        arange(-k, M-k, nm_dtype=nm_int(-k, M - k)))
+                              arange(-k, M-k, nm_dtype=nm_int(-k, M - k)))
 
-        # Avoid making a copy if the requested type is already bool
-        m = m.stype(nm_dtype, copy=False)
-        return m
-      end
+      # Avoid making a copy if the requested type is already bool
+      m = m.stype(nm_dtype, copy=False)
+      return m
     end
+  end
 
   def tril(m, k=0)
     m = Array(m)
