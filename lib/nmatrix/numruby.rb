@@ -63,8 +63,8 @@ module NumRuby
   end
 
   def self.tri(N, M=None, k=0, nm_dtype=float)
-    if M is None:
-        M = N
+    if M is nil
+      M = N
 
       m = greater_equal.outer(arange(N, nm_dtype=nm_int(0, N)),
                               arange(-k, M-k, nm_dtype=nm_int(-k, M - k)))
