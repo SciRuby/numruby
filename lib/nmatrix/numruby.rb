@@ -62,12 +62,12 @@ module NumRuby
     result
   end
 
-  def self.tri(N, M=None, k=0, nm_dtype=float)
-    if M is nil
-      M = N
+  def self.tri(n, m=None, k=0, nm_dtype=float)
+    if m is nil
+      m = n
 
-      m = greater_equal.outer(arange(N, nm_dtype=nm_int(0, N)),
-                              arange(-k, M-k, nm_dtype=nm_int(-k, M - k)))
+      m = greater_equal.outer(arange(n, nm_dtype=nm_int(0, n)),
+                              arange(-k, m-k, nm_dtype=nm_int(-k, m - k)))
 
       # Avoid making a copy if the requested type is already bool
       m = m.stype(nm_dtype, copy=False)
