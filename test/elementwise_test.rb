@@ -11,6 +11,8 @@ class NMatrix::ElementWiseTest < Minitest::Test
 
     @boolean_left = NMatrix.new  [2,2],[true, false, true, false], :nm_bool
     @boolean_right = NMatrix.new [2,2],[true, true, false, false], :nm_bool
+
+    @int = NMatrix.new [2, 2], [1, 2, 3, 4], :nm_int
   end
 
   def test_add
@@ -49,6 +51,30 @@ class NMatrix::ElementWiseTest < Minitest::Test
     assert_equal answer, result
   end
 
+  def test_sum
+    result = 12.4
+    answer = @left.sum
+    assert_in_delta answer, result, 0.01
+  end
+
+  def test_sum_bool
+    result = 2
+    answer = @boolean_left.sum
+    assert_equal answer, result
+  end
+
+  def test_sum_int
+    result = 10
+    answer = @int.sum
+    assert_equal answer, result
+  end
+
+  def test_sum_complex
+    result = (12.4 + 0.0i)
+    answer = @complex_left.sum
+    assert_in_delta answer, result, 0.01
+  end
+
   def test_sin
     result = NMatrix.new [2,2], @left.elements.map{ |x| Math.send(:sin, x) }
     answer = @left.sin
@@ -66,5 +92,4 @@ class NMatrix::ElementWiseTest < Minitest::Test
     answer = @left.tan
     assert_equal answer, result
   end
-
 end

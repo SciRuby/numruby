@@ -259,6 +259,89 @@ VALUE nm_sin(VALUE self){
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
 }
 
+/*
+ *  Elementwise sum operator.
+ *  Takes in the given matrix
+ *  and returns the sum of all the elements of the matrix
+*/
+VALUE nm_sum(VALUE self){
+  nmatrix* input;
+  Data_Get_Struct(self, nmatrix, input);
+
+  VALUE result;
+
+
+  switch(input->dtype){
+    case nm_bool:
+    {
+      bool* input_elements = (bool*)input->elements;
+      int sum = 0;
+      for(size_t index = 0; index < input->count; index++)
+      {
+        sum += input_elements[index];
+      }
+      result = INT2NUM(sum);
+      break;
+    }
+    case nm_int:
+    {
+      int* input_elements = (int*)input->elements;
+      int sum = 0;
+      for(size_t index = 0; index < input->count; index++){
+        sum += input_elements[index];
+      }
+      result = INT2NUM(sum);
+      break;
+    }
+    case nm_float32:
+    {
+      float* input_elements = (float*)input->elements;
+      float sum = 0;
+      for(size_t index = 0; index < input->count; index++){
+        sum += sin(input_elements[index]);
+      }
+      result = DBL2NUM((double)sum);
+      break;
+    }
+    case nm_float64:
+    {
+      double* input_elements = (double*)input->elements;
+      double sum = 0;
+      for(size_t index = 0; index < input->count; index++){
+        sum += input_elements[index];
+      }
+      result = DBL2NUM(sum);
+      break;
+    }
+    case nm_complex32:
+    {
+      complex float* input_elements = (complex float*)input->elements;
+      complex float sum = 0 + 0*I;
+      for(size_t index = 0; index < input->count; index++){
+        sum += input_elements[index];
+      }
+      double real = (double)creal(sum);
+      double imag = (double)cimag(sum);
+      result = rb_Complex(DBL2NUM(real), DBL2NUM(imag));
+      break;
+    }
+    case nm_complex64:
+    {
+      complex double* input_elements = (complex double*)input->elements;
+      complex double sum = 0 + 0*I;
+      for(size_t index = 0; index < input->count; index++){
+        sum += input_elements[index];
+      }
+      double real = creal(sum);
+      double imag = cimag(sum);
+      result = rb_Complex(DBL2NUM(real), DBL2NUM(imag));
+      break;
+    }
+  }
+
+  return result;
+}
+
 #define DEF_UNARY_RUBY_ACCESSOR(oper, name)                        \
 static VALUE nm_##name(VALUE self) {                               \
   nmatrix* input;                                                  \

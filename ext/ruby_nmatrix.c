@@ -384,6 +384,7 @@ DECL_ELEMENTWISE_RUBY_ACCESSOR(divide)
 
 
 VALUE nm_sin(VALUE self);
+VALUE nm_sum(VALUE self);
 
 #define DECL_UNARY_RUBY_ACCESSOR(name)          static VALUE nm_##name(VALUE self);
 DECL_UNARY_RUBY_ACCESSOR(cos)
@@ -609,6 +610,7 @@ void Init_nmatrix() {
   rb_define_method(NMatrix, "*", nm_multiply, 1);
   rb_define_method(NMatrix, "/", nm_divide, 1);
 
+  rb_define_method(NMatrix, "sum", nm_sum, 0);
   rb_define_method(NMatrix, "sin", nm_sin, 0);
   rb_define_method(NMatrix, "cos", nm_cos, 0);
   rb_define_method(NMatrix, "tan", nm_tan, 0);

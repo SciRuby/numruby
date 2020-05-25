@@ -59,5 +59,4 @@ class NMatrix::CreationTest < Minitest::Test
     assert_equal @m[0, 0..1, 0..1], @s
     assert_equal @m_int[0, 0..1, 0..1], @s_int
   end
-
 end
