@@ -340,7 +340,7 @@ VALUE ShapeError = Qnil;
 VALUE NMatrix = Qnil;
 VALUE SparseNMatrix = Qnil;
 
-void Init_nmatrix();
+void Init_numruby();
 
 VALUE average_nmatrix(int argc, VALUE* argv);
 VALUE constant_nmatrix(int argc, VALUE* argv, double constant);
@@ -507,7 +507,7 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice);
 size_t get_index(nmatrix* nmat, VALUE* indices);
 
 
-void Init_nmatrix() {
+void Init_numruby() {
 
   ///////////////////////
   // Class Definitions //

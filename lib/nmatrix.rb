@@ -1,5 +1,0 @@
-require_relative 'nmatrix/numruby.rb'
-require_relative 'nmatrix/nmatrix.rb'
-require_relative 'nmatrix/lapack.rb'
-require_relative 'nmatrix/blas.rb'
-require_relative 'nmatrix.so'

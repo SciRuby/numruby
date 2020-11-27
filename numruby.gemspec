@@ -1,18 +1,18 @@
 # coding: utf-8
 $:.unshift File.expand_path("../lib", __FILE__)
 
-require 'nmatrix/version.rb'
+require 'numruby/version.rb'
 
 Gem::Specification.new do |gem|
-  gem.name        = 'nmatrix'
+  gem.name        = 'numruby'
   gem.version     = '0.0.1'
   gem.date        = '2018-09-29'
   gem.summary     = 'Linear Algebra'
   # gem.description =  NMatrix::DESCRIPTION
   gem.authors     = ['Prasun Anand']
   gem.email       = 'prasunanand.bitsp@gmail.com'
-  gem.files       = ['lib/nmatrix.rb']
-  gem.homepage    = 'http://rubygems.org/gems/nmatrix'
+  gem.files       = ['lib/numruby.rb']
+  gem.homepage    = 'http://rubygems.org/gems/numruby'
   gem.license     = 'BSD-3-Clause'
   gem.extensions  = %w[ext/extconf.rb]
   gem.files       = `git ls-files -- ext/`.split("\n")

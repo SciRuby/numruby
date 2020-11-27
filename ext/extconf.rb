@@ -1,6 +1,6 @@
 require_relative 'mkmf.rb'
 
-extension_name = 'nmatrix'
+extension_name = 'numruby'
 
 $INSTALLFILES = [
   ['ruby_nmatrix.h'       , '$(archdir)'],

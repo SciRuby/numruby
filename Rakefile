@@ -6,19 +6,19 @@ require "rake/testtask"
 require "rdoc/task"
 
 Rake::ExtensionTask.new do |ext|
-  ext.name = 'nmatrix'
+  ext.name = 'numruby'
   ext.ext_dir = 'ext/'
   ext.lib_dir = 'lib/'
   ext.source_pattern = '**/*.{c,cpp, h}'
 end
 
 task :console do
-  cmd = ['irb', "-r './lib/nmatrix.rb'"]
+  cmd = ['irb', "-r './lib/numruby.rb'"]
   run(*cmd)
 end
 
 task :pry do
-  cmd = ['pry', "-r './lib/nmatrix.rb'"]
+  cmd = ['pry', "-r './lib/numruby.rb'"]
   run(*cmd)
 end
 
