@@ -60,4 +60,16 @@ class NMatrix::CreationTest < Minitest::Test
     assert_equal @m_int[0, 0..1, 0..1], @s_int
   end
 
+  def test_serializing
+    serialized_data_float = Marshal.dump(@m)
+    deserialized_data_float = Marshal.load(serialized_data_float)
+    serialized_data_int = Marshal.dump(@m_int)
+    deserialized_data_int = Marshal.load(serialized_data_int)
+    serialized_data_bool = Marshal.dump(@b)
+    deserialized_data_bool = Marshal.load(serialized_data_bool)
+    assert_equal @m, deserialized_data_float
+    assert_equal @m_int, deserialized_data_int
+    assert_equal @b, deserialized_data_bool
+  end
+  
 end

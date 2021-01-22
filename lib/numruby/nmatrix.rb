@@ -89,6 +89,46 @@ class NMatrix
     return self.elements
   end
 
+  def _dump data
+    [
+      self.dim,
+      self.dtype,
+      self.stype,
+      self.shape,
+      self.elements,
+    ].join(":")
+  end
+
+  def self._load serial
+    data = serial.split(":")
+    dim = data[0].to_i
+    dtype = data[1].to_sym
+    stype = data[2].to_sym
+    shape = data[3..(3+dim-1)]
+    elements = data[(3+dim)..data.length-1]
+    parsed_elements = []
+    
+    if dtype == :nm_bool 
+      elements.each do |e|
+        parsed_elements.push(e == "true" ? true : false)
+      end
+    elsif dtype == :nm_float64
+      elements.each do |e|
+        parsed_elements.push(e.to_f)
+      end
+    else 
+      # Convert to Integer
+      elements.each do |e|
+        parsed_elements.push(e.to_i)
+      end
+    end
+    parsed_shape = []
+    shape.each do |e| 
+      parsed_shape.push(e.to_i)
+    end
+    self.new(parsed_shape, parsed_elements, dtype)
+  end
+
   def inspect #:nodoc:
     original_inspect = super()
     original_inspect = original_inspect[0...original_inspect.size-1]
