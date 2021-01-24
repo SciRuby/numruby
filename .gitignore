@@ -1,6 +1,5 @@
 # compiled output
 /tmp
-Gemfile.lock
 /.yardoc
 .rake_tasks~
 *.so
