@@ -44,7 +44,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_bool:                                                                 \
     {                                                                            \
       bool* result_elements = ALLOC_N(bool, result->count);                  \
-      if(RB_TYPE_P(another, T_TRUE) || RB_TYPE_P(another, T_FALSE)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         bool* left_elements = (bool*)left->elements;                       \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (another ? Qtrue : Qfalse);      \
@@ -64,7 +64,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_int:                                                                 \
     {                                                                            \
       int* result_elements = ALLOC_N(int, result->count);                  \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         int* left_elements = (int*)left->elements;                               \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
@@ -84,7 +84,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_float32:                                                             \
     {                                                                            \
       float* result_elements = ALLOC_N(float, result->count);                    \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         float* left_elements = (float*)left->elements;                           \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
@@ -104,7 +104,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_float64:                                                             \
     {                                                                            \
       double* result_elements = ALLOC_N(double, result->count);                  \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         double* left_elements = (double*)left->elements;                    \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
@@ -124,7 +124,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_complex32:                                                             \
     {                                                                            \
       complex float* result_elements = ALLOC_N(complex float, result->count);                    \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         complex float* left_elements = (complex float*)left->elements;      \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
@@ -144,7 +144,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_complex64:                                                             \
     {                                                                            \
       complex double* result_elements = ALLOC_N(complex double, result->count);                    \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         complex double* left_elements = (complex double*)left->elements;    \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
@@ -161,6 +161,26 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       result->elements = result_elements;                                          \
       break;                                                                       \
     }                                                                              \
+    default:                                                                    \
+    {                                                                            \
+      double* result_elements = ALLOC_N(double, result->count);                  \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
+        double* left_elements = (double*)left->elements;                    \
+        for(size_t index = 0; index < left->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
+        }                                                                        \
+      }                                                                          \
+      else{                                                                      \
+        double* left_elements = (double*)left_copy->elements;                    \
+        double* right_elements = (double*)right_copy->elements;                       \
+                                                                                 \
+        for(size_t index = 0; index < left_copy->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
+        }                                                                        \
+      }                                                                          \
+      result->elements = result_elements;                                        \
+      break;                                                                     \
+    }                                                                            \
   }                                                                                 \
   return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);                         \
 }

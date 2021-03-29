@@ -1,6 +1,6 @@
 /*
  * converts Range objects to corresponding
- * lower limt and upper limit and put them in size_t varibles
+ * lower limit and upper limit and put them in size_t variables
  */
 void parse_ranges(nmatrix* nmat, VALUE* indices, size_t* lower, size_t* upper){
 

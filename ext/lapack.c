@@ -1287,7 +1287,6 @@ VALUE nm_det(VALUE self){
   switch (matrix->dtype) {
     case nm_float32:
     {
-      
       float* elements = ALLOC_N(float, matrix->count);
       int* pivot = ALLOC_N(int, min(m,n)+1);
     
@@ -1309,7 +1308,27 @@ VALUE nm_det(VALUE self){
     }
     case nm_float64:
     {
-
+      double* elements = ALLOC_N(double, matrix->count);
+      int* pivot = ALLOC_N(int, min(m,n)+1);
+    
+      dgetrf(matrix->elements, matrix->shape[1], matrix->shape[0], pivot, elements);
+    
+      int num_perm = 0;
+      int j = 0;
+      for(int i = 0; i < min(m,n)+1; ++i){
+        if(pivot[i]-1 != j){num_perm += 1;}
+        j++;
+      }
+    
+      prod = (num_perm % 2 == 1) ? 1 : -1;
+    
+      for(int i =0; i < min(m,n); i++){
+        prod *= elements[matrix->shape[0]*i + i];
+      }
+      break;
+    }
+    default:
+    {
       double* elements = ALLOC_N(double, matrix->count);
       int* pivot = ALLOC_N(int, min(m,n)+1);
     

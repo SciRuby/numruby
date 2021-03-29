@@ -430,6 +430,11 @@ VALUE nm_sparse_to_array(VALUE self){
       elements_t = ALLOC_N(double complex, count);
       break;
     }
+    default:
+    {
+      elements_t = ALLOC_N(double, count);
+      break;
+    }
   }
 
   switch (input->sptype) {
@@ -470,6 +475,16 @@ VALUE nm_sparse_to_array(VALUE self){
                         input->shape[1],
                         input->diag->offset,
                         elements_t, nm_float64);
+      break;
+    }
+    default:
+    {
+      get_dense_from_coo(input->coo->elements,
+                        input->shape[0],
+                        input->shape[1],
+                        input->coo->ia,
+                        input->coo->ja,
+                        elements_t, input->dtype);
       break;
     }
   }
@@ -520,6 +535,14 @@ VALUE nm_sparse_to_array(VALUE self){
       double complex* elements = elements_t;
       for (size_t index = 0; index < count; index++){
         array[index] = rb_complex_new(DBL2NUM(creal(elements[index])), DBL2NUM(cimag(elements[index])));
+      }
+      break;
+    }
+    default:
+    {
+      double* elements = elements_t;
+      for (size_t index = 0; index < count; index++){
+        array[index] = DBL2NUM(elements[index]);
       }
       break;
     }
@@ -575,6 +598,11 @@ VALUE nm_sparse_to_nmatrix(VALUE self){
     case nm_complex64:
     {
       elements_t = ALLOC_N(double complex, result->count);
+      break;
+    }
+    default:
+    {
+      elements_t = ALLOC_N(double, result->count);
       break;
     }
   }
@@ -653,7 +681,7 @@ void get_dense_from_coo(const void* data_t, const size_t rows,
     }
     case nm_int:
     {
-      const const int* data = data_t;
+      const int* data = data_t;
       int* elements = elements_t;
       for(size_t i = 0; i < rows*cols; ++i){ elements[i] = 0; }
 
