@@ -131,6 +131,28 @@ static const rb_data_type_t nm_data_type = {
   0, 0, RUBY_TYPED_FREE_IMMEDIATELY
 };
 
+typedef struct NMATRIX_BUFFER_STRUCT
+{
+  size_t count;
+  size_t ndims;
+  size_t* shape;
+  void* buffer_ele_start_ptr;
+  nmatrix* mat;
+}nmatrix_buffer;
+
+void nm_buffer_free(void* ptr);
+size_t nm_buffer_memsize(const void* ptr);
+
+static const rb_data_type_t nm_buffer_data_type = {
+  "numruby/nmatrix_buffer",
+  {
+    0,
+    nm_buffer_free,
+    nm_buffer_memsize,
+  },
+  0, 0, RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 nmatrix* nmatrix_new(
   nm_dtype dtype,
   nm_stype stype,
@@ -872,6 +894,19 @@ size_t nm_memsize(const void* ptr){
   size_t size = sizeof(mat);
   if (mat->shape) size += mat->ndims;
   if (mat->elements) size += mat->count;
+  return size;
+}
+
+void nm_buffer_free(void* ptr){
+  nmatrix_buffer *mat_buf = (nmatrix_buffer*)ptr;
+  if (mat_buf->shape) xfree(mat_buf->shape);
+  xfree(mat_buf);
+}
+
+size_t nm_buffer_memsize(const void* ptr){
+  nmatrix_buffer *mat_buf = (nmatrix_buffer*)ptr;
+  size_t size = sizeof(mat_buf);
+  if (mat_buf->shape) size += mat_buf->ndims;
   return size;
 }
 
