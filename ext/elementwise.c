@@ -7,7 +7,7 @@
 #define DEF_ELEMENTWISE_RUBY_ACCESSOR(name, oper)  \
 VALUE nm_##name(VALUE self, VALUE another){        \
   nmatrix* left;                                   \
-  Data_Get_Struct(self, nmatrix, left);            \
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, left);            \
                                                    \
   nmatrix* right;                                  \
   nmatrix* result = ALLOC(nmatrix);                \
@@ -15,7 +15,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
   nmatrix* left_copy;                              \
   nmatrix* right_copy;                             \
   if(rb_obj_is_kind_of(another, NMatrix) == Qtrue) {\
-    Data_Get_Struct(another, nmatrix, right);       \
+    TypedData_Get_Struct(another, nmatrix, &nm_data_type, right);       \
     left_copy = matrix_copy(left);                  \
     right_copy = matrix_copy(right);                \
     broadcast_matrices(left_copy, right_copy);      \
@@ -182,7 +182,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       break;                                                                     \
     }                                                                            \
   }                                                                                 \
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);                         \
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);                         \
 }
 
 DEF_ELEMENTWISE_RUBY_ACCESSOR(add, +)
@@ -200,7 +200,7 @@ DEF_ELEMENTWISE_RUBY_ACCESSOR(divide, /)
 
 VALUE nm_sin(VALUE self){
   nmatrix* input;
-  Data_Get_Struct(self, nmatrix, input);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);
 
   nmatrix* result = ALLOC(nmatrix);
   result->dtype = input->dtype;
@@ -276,13 +276,13 @@ VALUE nm_sin(VALUE self){
     }
   }
 
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }
 
 #define DEF_UNARY_RUBY_ACCESSOR(oper, name)                        \
 static VALUE nm_##name(VALUE self) {                               \
   nmatrix* input;                                                  \
-  Data_Get_Struct(self, nmatrix, input);                           \
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);                           \
                                                                    \
   nmatrix* result = ALLOC(nmatrix);                                \
   result->dtype = input->dtype;                                    \
@@ -356,7 +356,7 @@ static VALUE nm_##name(VALUE self) {                               \
       break;                                                       \
     }                                                              \
   }                                                                \
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);         \
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);         \
 }
 
 DEF_UNARY_RUBY_ACCESSOR(cos, cos)
@@ -377,7 +377,7 @@ DEF_UNARY_RUBY_ACCESSOR(sqrt, sqrt)
 #define DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(oper, name)            \
 static VALUE nm_##name(VALUE self) {                               \
   nmatrix* input;                                                  \
-  Data_Get_Struct(self, nmatrix, input);                           \
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);                           \
                                                                    \
   nmatrix* result = ALLOC(nmatrix);                                \
   result->dtype = input->dtype;                                    \
@@ -439,7 +439,7 @@ static VALUE nm_##name(VALUE self) {                               \
       /* Not supported message */                                  \
     }                                                              \
   }                                                                \
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);         \
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);         \
 }
 
 DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(log2, log2)

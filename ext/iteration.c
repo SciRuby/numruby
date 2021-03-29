@@ -1,6 +1,6 @@
 VALUE nm_each(VALUE self) {
   nmatrix* input;
-  Data_Get_Struct(self, nmatrix, input);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);
 
   switch(input->stype){
     case nm_dense:
@@ -78,7 +78,7 @@ VALUE nm_each(VALUE self) {
 
 VALUE nm_each_with_indices(VALUE self) {
   nmatrix* input;
-  Data_Get_Struct(self, nmatrix, input);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);
 
   VALUE* shape_array = ALLOC_N(VALUE, input->ndims);
   for (size_t index = 0; index < input->ndims; index++){
@@ -217,7 +217,7 @@ VALUE nm_map_stored(VALUE self) {
 
 VALUE nm_each_rank(VALUE self, VALUE dimension_idx) {
   nmatrix* input;
-  Data_Get_Struct(self, nmatrix, input);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);
 
   size_t dim_idx = NUM2SIZET(dimension_idx);
 
@@ -249,7 +249,7 @@ VALUE nm_each_rank(VALUE self, VALUE dimension_idx) {
 
     get_slice(input, lower_indices, upper_indices, result);
 
-    rb_yield(Data_Wrap_Struct(NMatrix, NULL, nm_free, result));
+    rb_yield(TypedData_Wrap_Struct(NMatrix, &nm_data_type, result));
   }
 
   return self;

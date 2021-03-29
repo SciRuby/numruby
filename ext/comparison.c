@@ -6,8 +6,8 @@
 VALUE nm_eqeq(VALUE self, VALUE another){
   nmatrix* left;
   nmatrix* right;
-  Data_Get_Struct(self, nmatrix, left);
-  Data_Get_Struct(another, nmatrix, right);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, left);
+  TypedData_Get_Struct(another, nmatrix, &nm_data_type, right);
 
   if(left->count != right->count){
     return Qfalse;
@@ -99,7 +99,7 @@ VALUE nm_eqeq(VALUE self, VALUE another){
  */
 VALUE nm_gt(VALUE self, VALUE another){
   nmatrix* left;
-  Data_Get_Struct(self, nmatrix, left);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, left);
 
   nmatrix* result = ALLOC(nmatrix);
   result->dtype = nm_bool;
@@ -172,7 +172,7 @@ VALUE nm_gt(VALUE self, VALUE another){
     }
   }
   result->elements = result_elements;
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }
 
 /*
@@ -183,7 +183,7 @@ VALUE nm_gt(VALUE self, VALUE another){
  */
 VALUE nm_gteq(VALUE self, VALUE another){
   nmatrix* left;
-  Data_Get_Struct(self, nmatrix, left);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, left);
 
   nmatrix* result = ALLOC(nmatrix);
   result->dtype = nm_bool;
@@ -256,7 +256,7 @@ VALUE nm_gteq(VALUE self, VALUE another){
     }
   }
   result->elements = result_elements;
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }
 
 /*
@@ -267,7 +267,7 @@ VALUE nm_gteq(VALUE self, VALUE another){
  */
 VALUE nm_lt(VALUE self, VALUE another){
   nmatrix* left;
-  Data_Get_Struct(self, nmatrix, left);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, left);
 
   nmatrix* result = ALLOC(nmatrix);
   result->dtype = nm_bool;
@@ -340,7 +340,7 @@ VALUE nm_lt(VALUE self, VALUE another){
     }
   }
   result->elements = result_elements;
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }
 
 
@@ -352,7 +352,7 @@ VALUE nm_lt(VALUE self, VALUE another){
  */
 VALUE nm_lteq(VALUE self, VALUE another){
   nmatrix* left;
-  Data_Get_Struct(self, nmatrix, left);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, left);
 
   nmatrix* result = ALLOC(nmatrix);
   result->dtype = nm_bool;
@@ -425,5 +425,5 @@ VALUE nm_lteq(VALUE self, VALUE another){
     }
   }
   result->elements = result_elements;
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }

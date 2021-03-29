@@ -331,7 +331,7 @@ void broadcast_matrices(nmatrix* nmat1, nmatrix* nmat2) {
  */
 VALUE nm_broadcast_to(int argc, VALUE* argv) {
   nmatrix* nmat;
-  Data_Get_Struct(argv[0], nmatrix, nmat);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, nmat);
 
   size_t new_ndims = (size_t)RARRAY_LEN(argv[1]);
 
@@ -342,7 +342,7 @@ VALUE nm_broadcast_to(int argc, VALUE* argv) {
 
   broadcast_matrix(nmat, new_shape, new_ndims);
 
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, nmat);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, nmat);
 }
 
 /*

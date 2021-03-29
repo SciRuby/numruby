@@ -3,7 +3,7 @@
  */
 VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
   nmatrix* nmat;
-  Data_Get_Struct(self, nmatrix, nmat);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, nmat);
 
   size_t* lower_indices = ALLOC_N(size_t, nmat->ndims);
   size_t* upper_indices = ALLOC_N(size_t, nmat->ndims);
@@ -24,7 +24,7 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
 
             get_slice(nmat, lower_indices, upper_indices, slice);
 
-            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+            return TypedData_Wrap_Struct(NMatrix, &nm_data_type, slice);
 
             //return a slice
           }
@@ -48,7 +48,7 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
 
             get_slice(nmat, lower_indices, upper_indices, slice);
 
-            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+            return TypedData_Wrap_Struct(NMatrix, &nm_data_type, slice);
 
             //return a slice
           }
@@ -72,7 +72,7 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
 
             get_slice(nmat, lower_indices, upper_indices, slice);
 
-            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+            return TypedData_Wrap_Struct(NMatrix, &nm_data_type, slice);
 
             //return a slice
           }
@@ -96,7 +96,7 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
 
             get_slice(nmat, lower_indices, upper_indices, slice);
 
-            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+            return TypedData_Wrap_Struct(NMatrix, &nm_data_type, slice);
 
             //return a slice
           }
@@ -120,7 +120,7 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
 
             get_slice(nmat, lower_indices, upper_indices, slice);
 
-            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+            return TypedData_Wrap_Struct(NMatrix, &nm_data_type, slice);
 
             //return a slice
           }
@@ -144,7 +144,7 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
 
             get_slice(nmat, lower_indices, upper_indices, slice);
 
-            return Data_Wrap_Struct(NMatrix, NULL, nm_free, slice);
+            return TypedData_Wrap_Struct(NMatrix, &nm_data_type, slice);
 
             //return a slice
           }
@@ -193,7 +193,7 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
  */
 VALUE nm_accessor_set(int argc, VALUE* argv, VALUE self){
   nmatrix* nmat;
-  Data_Get_Struct(self, nmatrix, nmat);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, nmat);
 
   size_t index = get_index(nmat, argv);
 
