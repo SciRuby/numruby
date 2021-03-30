@@ -118,6 +118,42 @@ typedef struct NMATRIX_STRUCT
   sparse_storage* sp;
 }nmatrix;
 
+void nm_free(void* ptr);
+size_t nm_memsize(const void* ptr);
+
+static const rb_data_type_t nm_data_type = {
+  "numruby/nmatrix",
+  {
+    0,
+    nm_free,
+    nm_memsize,
+  },
+  0, 0, RUBY_TYPED_FREE_IMMEDIATELY
+};
+
+typedef struct NMATRIX_BUFFER_STRUCT
+{
+  nm_dtype dtype;
+  size_t count;
+  size_t ndims;
+  size_t* shape;
+  void* buffer_ele_start_ptr;
+  nmatrix* mat;
+}nmatrix_buffer;
+
+void nm_buffer_free(void* ptr);
+size_t nm_buffer_memsize(const void* ptr);
+
+static const rb_data_type_t nm_buffer_data_type = {
+  "numruby/nmatrix_buffer",
+  {
+    0,
+    nm_buffer_free,
+    nm_buffer_memsize,
+  },
+  0, 0, RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 nmatrix* nmatrix_new(
   nm_dtype dtype,
   nm_stype stype,
@@ -354,7 +390,6 @@ VALUE nm_get_dim(VALUE self);
 VALUE nm_get_elements(VALUE self);
 VALUE nm_get_shape(VALUE self);
 VALUE nm_alloc(VALUE klass);
-void nm_free(nmatrix* mat);
 
 VALUE nm_each(VALUE self);
 VALUE nm_each_with_indices(VALUE self);
@@ -503,7 +538,7 @@ void get_dense_from_dia(const void* data_t, const size_t rows,
                        void* elements_t, nm_dtype);
 
 //forwards for internally used functions
-void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice);
+void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix_buffer* slice);
 size_t get_index(nmatrix* nmat, VALUE* indices);
 
 
@@ -695,7 +730,7 @@ VALUE constant_nmatrix(int argc, VALUE* argv, double constant){
 
   mat->elements = elements;
 
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, mat);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, mat);
 }
 
 /*
@@ -720,7 +755,7 @@ VALUE constant_nmatrix(int argc, VALUE* argv, double constant){
  */
 VALUE nmatrix_init(int argc, VALUE* argv, VALUE self){
   nmatrix* mat;
-  Data_Get_Struct(self, nmatrix, mat);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, mat);
 
   if(argc > 0){
     mat->ndims = (size_t)RARRAY_LEN(argv[0]);
@@ -842,21 +877,45 @@ VALUE nm_alloc(VALUE klass)
 {
   nmatrix* mat = ALLOC(nmatrix);
 
-  return Data_Wrap_Struct(klass, NULL, nm_free, mat);
+  return TypedData_Wrap_Struct(klass, &nm_data_type, mat);
 }
 
 /*
  * Destructor.
  */
-void nm_free(nmatrix* mat){
+void nm_free(void* ptr){
+  nmatrix *mat = (nmatrix*)ptr;
+  if (mat->shape) xfree(mat->shape);
+  if (mat->elements) xfree(mat->elements);
   xfree(mat);
+}
+
+size_t nm_memsize(const void* ptr){
+  nmatrix *mat = (nmatrix*)ptr;
+  size_t size = sizeof(mat);
+  if (mat->shape) size += mat->ndims;
+  if (mat->elements) size += mat->count;
+  return size;
+}
+
+void nm_buffer_free(void* ptr){
+  nmatrix_buffer *mat_buf = (nmatrix_buffer*)ptr;
+  if (mat_buf->shape) xfree(mat_buf->shape);
+  xfree(mat_buf);
+}
+
+size_t nm_buffer_memsize(const void* ptr){
+  nmatrix_buffer *mat_buf = (nmatrix_buffer*)ptr;
+  size_t size = sizeof(mat_buf);
+  if (mat_buf->shape) size += mat_buf->ndims;
+  return size;
 }
 
 // Returns number of dimensions of matrix
 VALUE nm_get_dim(VALUE self){
   nmatrix* input;
 
-  Data_Get_Struct(self, nmatrix, input);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);
 
   return INT2NUM(input->ndims);
 }
@@ -864,7 +923,7 @@ VALUE nm_get_dim(VALUE self){
 // Returns a flat list(one dimensional array) of elements values of matrix
 VALUE nm_get_elements(VALUE self){
   nmatrix* input;
-  Data_Get_Struct(self, nmatrix, input);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);
 
   size_t count = input->count;
   VALUE* array = NULL;
@@ -955,7 +1014,7 @@ VALUE nm_get_elements(VALUE self){
 VALUE nm_get_shape(VALUE self){
   nmatrix* input;
 
-  Data_Get_Struct(self, nmatrix, input);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);
 
   VALUE* array = ALLOC_N(VALUE, input->ndims);
   for (size_t index = 0; index < input->ndims; index++){
@@ -974,7 +1033,7 @@ VALUE nm_get_shape(VALUE self){
  */
 VALUE nm_get_dtype(VALUE self){
   nmatrix* nmat;
-  Data_Get_Struct(self, nmatrix, nmat);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, nmat);
 
   return ID2SYM(rb_intern(DTYPE_NAMES[nmat->dtype]));
 }
@@ -987,7 +1046,7 @@ VALUE nm_get_dtype(VALUE self){
  */
 VALUE nm_get_stype(VALUE self){
   nmatrix* nmat;
-  Data_Get_Struct(self, nmatrix, nmat);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, nmat);
 
   return ID2SYM(rb_intern(STYPE_NAMES[nmat->stype]));
 }
@@ -1027,7 +1086,7 @@ void increment_state(VALUE* state_array, VALUE* shape_array, size_t ndims) {
 // Return rank of the matrix
 VALUE nm_get_rank(VALUE self, VALUE dim_val){
   nmatrix* input;
-  Data_Get_Struct(self, nmatrix, input);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);
   double* input_elements = (double*)input->elements;
 
   size_t dim = NUM2LONG(dim_val);
@@ -1049,7 +1108,7 @@ VALUE nm_get_rank(VALUE self, VALUE dim_val){
     result_elements[i] = input_elements[input->shape[1]*dim + i];
   result->elements = result_elements;
 
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }
 
 VALUE nm_inspect(VALUE self){

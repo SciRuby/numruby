@@ -9,8 +9,8 @@
 VALUE nm_dot(VALUE self, VALUE another){
   nmatrix* left;
   nmatrix* right;
-  Data_Get_Struct(self, nmatrix, left);
-  Data_Get_Struct(another, nmatrix, right);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, left);
+  TypedData_Get_Struct(another, nmatrix, &nm_data_type, right);
 
   nmatrix* result = ALLOC(nmatrix);
   result->dtype = left->dtype;
@@ -67,7 +67,7 @@ VALUE nm_dot(VALUE self, VALUE another){
     }
   }
 
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }
 
 /*
@@ -79,7 +79,7 @@ VALUE nm_dot(VALUE self, VALUE another){
  */
 VALUE nm_norm2(VALUE self){
   nmatrix* matrix;
-  Data_Get_Struct(self, nmatrix, matrix);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, matrix);
   //check mat is vector
   VALUE val = Qnil;
 

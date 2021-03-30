@@ -5,7 +5,7 @@
  */
 VALUE nm_geqrf(int argc, VALUE* argv) {
   nmatrix* matrix;
-  Data_Get_Struct(argv[0], nmatrix, matrix);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix);
 
   int m = matrix->shape[0]; //no. of rows
   int n = matrix->shape[1]; //no. of cols
@@ -36,8 +36,8 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
       result_qr->elements = elements;
       result_tau->elements = tau_elements;
 
-      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
-      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      VALUE qr = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_qr);
+      VALUE tau = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_tau);
       return rb_ary_new3(2, qr, tau);
       break;
     }
@@ -51,8 +51,8 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
       result_qr->elements = elements;
       result_tau->elements = tau_elements;
 
-      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
-      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      VALUE qr = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_qr);
+      VALUE tau = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_tau);
       return rb_ary_new3(2, qr, tau);
       break;
     }
@@ -66,8 +66,8 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
       result_qr->elements = elements;
       result_tau->elements = tau_elements;
 
-      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
-      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      VALUE qr = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_qr);
+      VALUE tau = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_tau);
       return rb_ary_new3(2, qr, tau);
       break;
     }
@@ -81,8 +81,8 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
       result_qr->elements = elements;
       result_tau->elements = tau_elements;
 
-      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
-      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
+      VALUE qr = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_qr);
+      VALUE tau = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_tau);
       return rb_ary_new3(2, qr, tau);
       break;
     }
@@ -99,10 +99,10 @@ VALUE nm_geqrf(int argc, VALUE* argv) {
  */
 VALUE nm_orgqr(int argc, VALUE* argv) {
   nmatrix* matrix_qr;
-  Data_Get_Struct(argv[0], nmatrix, matrix_qr);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix_qr);
 
   nmatrix* matrix_tau;
-  Data_Get_Struct(argv[1], nmatrix, matrix_tau);
+  TypedData_Get_Struct(argv[1], nmatrix, &nm_data_type, matrix_tau);
 
   int m = matrix_qr->shape[0]; //no. of rows
   int n = matrix_qr->shape[1]; //no. of cols
@@ -131,7 +131,7 @@ VALUE nm_orgqr(int argc, VALUE* argv) {
 
       result_q->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_q);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_q);
       break;
     }
     case nm_float64:
@@ -143,7 +143,7 @@ VALUE nm_orgqr(int argc, VALUE* argv) {
 
       result_q->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_q);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_q);
       break;
     }
     case nm_complex32:
@@ -155,7 +155,7 @@ VALUE nm_orgqr(int argc, VALUE* argv) {
 
       result_q->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_q);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_q);
       break;
     }
     case nm_complex64:
@@ -167,7 +167,7 @@ VALUE nm_orgqr(int argc, VALUE* argv) {
 
       result_q->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_q);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_q);
       break;
     }
   }
@@ -181,7 +181,7 @@ VALUE nm_orgqr(int argc, VALUE* argv) {
  */
 VALUE nm_geqp3(int argc, VALUE* argv) {
   nmatrix* matrix;
-  Data_Get_Struct(argv[0], nmatrix, matrix);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix);
 
   int m = matrix->shape[0]; //no. of rows
   int n = matrix->shape[1]; //no. of cols
@@ -216,9 +216,9 @@ VALUE nm_geqp3(int argc, VALUE* argv) {
       result_tau->elements = tau_elements;
       result_jpvt->elements = jpvt_elements;
 
-      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
-      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
-      VALUE jpvt = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_jpvt);
+      VALUE qr = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_qr);
+      VALUE tau = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_tau);
+      VALUE jpvt = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_jpvt);
       return rb_ary_new3(3, qr, tau, jpvt);
       break;
     }
@@ -234,9 +234,9 @@ VALUE nm_geqp3(int argc, VALUE* argv) {
       result_tau->elements = tau_elements;
       result_jpvt->elements = jpvt_elements;
 
-      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
-      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
-      VALUE jpvt = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_jpvt);
+      VALUE qr = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_qr);
+      VALUE tau = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_tau);
+      VALUE jpvt = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_jpvt);
       return rb_ary_new3(3, qr, tau, jpvt);
       break;
     }
@@ -252,9 +252,9 @@ VALUE nm_geqp3(int argc, VALUE* argv) {
       result_tau->elements = tau_elements;
       result_jpvt->elements = jpvt_elements;
 
-      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
-      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
-      VALUE jpvt = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_jpvt);
+      VALUE qr = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_qr);
+      VALUE tau = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_tau);
+      VALUE jpvt = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_jpvt);
       return rb_ary_new3(3, qr, tau, jpvt);
       break;
     }
@@ -270,9 +270,9 @@ VALUE nm_geqp3(int argc, VALUE* argv) {
       result_tau->elements = tau_elements;
       result_jpvt->elements = jpvt_elements;
 
-      VALUE qr = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_qr);
-      VALUE tau = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_tau);
-      VALUE jpvt = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_jpvt);
+      VALUE qr = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_qr);
+      VALUE tau = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_tau);
+      VALUE jpvt = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_jpvt);
       return rb_ary_new3(3, qr, tau, jpvt);
       break;
     }
@@ -294,7 +294,7 @@ VALUE nm_geqp3(int argc, VALUE* argv) {
  */
 VALUE nm_potrf(int argc, VALUE* argv) {
   nmatrix* matrix;
-  Data_Get_Struct(argv[0], nmatrix, matrix);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix);
 
   bool lower = (bool)RTEST(argv[1]);
 
@@ -324,7 +324,7 @@ VALUE nm_potrf(int argc, VALUE* argv) {
 
       result_cho->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_cho);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_cho);
       break;
     }
     case nm_float64:
@@ -335,7 +335,7 @@ VALUE nm_potrf(int argc, VALUE* argv) {
 
       result_cho->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_cho);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_cho);
       break;
     }
     case nm_complex32:
@@ -346,7 +346,7 @@ VALUE nm_potrf(int argc, VALUE* argv) {
 
       result_cho->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_cho);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_cho);
       break;
     }
     case nm_complex64:
@@ -357,7 +357,7 @@ VALUE nm_potrf(int argc, VALUE* argv) {
 
       result_cho->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result_cho);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_cho);
       break;
     }
   }
@@ -372,14 +372,14 @@ VALUE nm_potrf(int argc, VALUE* argv) {
  */
 VALUE nm_potrs(int argc, VALUE* argv) {
   nmatrix* matrix_a;
-  Data_Get_Struct(argv[0], nmatrix, matrix_a);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix_a);
 
   int m_a = matrix_a->shape[0]; //no. of rows
   int n_a = matrix_a->shape[1]; //no. of cols
   int lda_a = n_a, info = -1;
 
   nmatrix* matrix_b;
-  Data_Get_Struct(argv[1], nmatrix, matrix_b);
+  TypedData_Get_Struct(argv[1], nmatrix, &nm_data_type, matrix_b);
 
   int m_b = matrix_b->shape[0]; //no. of rows
   int n_b = 1; //no. of cols
@@ -410,7 +410,7 @@ VALUE nm_potrs(int argc, VALUE* argv) {
 
       result->elements = elements_b;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
     case nm_float64:
@@ -422,7 +422,7 @@ VALUE nm_potrs(int argc, VALUE* argv) {
 
       result->elements = elements_b;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
     case nm_complex32:
@@ -434,7 +434,7 @@ VALUE nm_potrs(int argc, VALUE* argv) {
 
       result->elements = elements_b;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
     case nm_complex64:
@@ -446,7 +446,7 @@ VALUE nm_potrs(int argc, VALUE* argv) {
 
       result->elements = elements_b;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
   }
@@ -481,7 +481,7 @@ VALUE nm_potrs(int argc, VALUE* argv) {
  */
 VALUE nm_gesdd(int argc, VALUE* argv) {
   nmatrix* matrix;
-  Data_Get_Struct(argv[0], nmatrix, matrix);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix);
 
   int m = matrix->shape[0]; //no. of rows
   int n = matrix->shape[1]; //no. of cols
@@ -552,7 +552,7 @@ VALUE nm_gesdd(int argc, VALUE* argv) {
  */
 VALUE nm_getrf(int argc, VALUE* argv) {
   nmatrix* matrix;
-  Data_Get_Struct(argv[0], nmatrix, matrix);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix);
 
   int m = matrix->shape[0]; //no. of rows
   int n = matrix->shape[1]; //no. of cols
@@ -583,8 +583,8 @@ VALUE nm_getrf(int argc, VALUE* argv) {
       result_lu->elements = elements;
       result_ipiv->elements = ipiv_elements;
 
-      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
-      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      VALUE lu = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_lu);
+      VALUE ipiv = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_ipiv);
       return rb_ary_new3(2, lu, ipiv);
       break;
     }
@@ -598,8 +598,8 @@ VALUE nm_getrf(int argc, VALUE* argv) {
       result_lu->elements = elements;
       result_ipiv->elements = ipiv_elements;
 
-      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
-      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      VALUE lu = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_lu);
+      VALUE ipiv = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_ipiv);
       return rb_ary_new3(2, lu, ipiv);
       break;
     }
@@ -613,8 +613,8 @@ VALUE nm_getrf(int argc, VALUE* argv) {
       result_lu->elements = elements;
       result_ipiv->elements = ipiv_elements;
 
-      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
-      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      VALUE lu = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_lu);
+      VALUE ipiv = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_ipiv);
       return rb_ary_new3(2, lu, ipiv);
       break;
     }
@@ -628,8 +628,8 @@ VALUE nm_getrf(int argc, VALUE* argv) {
       result_lu->elements = elements;
       result_ipiv->elements = ipiv_elements;
 
-      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
-      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      VALUE lu = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_lu);
+      VALUE ipiv = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_ipiv);
       return rb_ary_new3(2, lu, ipiv);
       break;
     }
@@ -646,17 +646,17 @@ VALUE nm_getrf(int argc, VALUE* argv) {
  */
 VALUE nm_getrs(int argc, VALUE* argv) {
   nmatrix* matrix_a;
-  Data_Get_Struct(argv[0], nmatrix, matrix_a);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix_a);
 
   int m_a = matrix_a->shape[0]; //no. of rows
   int n_a = matrix_a->shape[1]; //no. of cols
   int lda_a = n_a, info = -1;
 
   nmatrix* matrix_ipiv;
-  Data_Get_Struct(argv[1], nmatrix, matrix_ipiv);
+  TypedData_Get_Struct(argv[1], nmatrix, &nm_data_type, matrix_ipiv);
 
   nmatrix* matrix_b;
-  Data_Get_Struct(argv[2], nmatrix, matrix_b);
+  TypedData_Get_Struct(argv[2], nmatrix, &nm_data_type, matrix_b);
 
   int m_b = matrix_b->shape[0]; //no. of rows
   int n_b = 1; //no. of cols
@@ -695,7 +695,7 @@ VALUE nm_getrs(int argc, VALUE* argv) {
 
       result->elements = elements_b;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
     case nm_float64:
@@ -708,7 +708,7 @@ VALUE nm_getrs(int argc, VALUE* argv) {
 
       result->elements = elements_b;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
     case nm_complex32:
@@ -721,7 +721,7 @@ VALUE nm_getrs(int argc, VALUE* argv) {
 
       result->elements = elements_b;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
     case nm_complex64:
@@ -734,7 +734,7 @@ VALUE nm_getrs(int argc, VALUE* argv) {
 
       result->elements = elements_b;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
   }
@@ -751,14 +751,14 @@ VALUE nm_getrs(int argc, VALUE* argv) {
  */
 VALUE nm_getri(int argc, VALUE* argv) {
   nmatrix* matrix_lu;
-  Data_Get_Struct(argv[0], nmatrix, matrix_lu);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix_lu);
 
   int m = matrix_lu->shape[0]; //no. of rows
   int n = matrix_lu->shape[1]; //no. of cols
   int lda = n, info = -1;
 
   nmatrix* matrix_ipiv;
-  Data_Get_Struct(argv[1], nmatrix, matrix_ipiv);
+  TypedData_Get_Struct(argv[1], nmatrix, &nm_data_type, matrix_ipiv);
 
   nmatrix* result = nmatrix_new(matrix_lu->dtype, matrix_lu->stype, 2, matrix_lu->count, matrix_lu->shape, NULL);
 
@@ -782,7 +782,7 @@ VALUE nm_getri(int argc, VALUE* argv) {
 
       result->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
     case nm_float64:
@@ -794,7 +794,7 @@ VALUE nm_getri(int argc, VALUE* argv) {
 
       result->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
     case nm_complex32:
@@ -806,7 +806,7 @@ VALUE nm_getri(int argc, VALUE* argv) {
 
       result->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
     case nm_complex64:
@@ -818,7 +818,7 @@ VALUE nm_getri(int argc, VALUE* argv) {
 
       result->elements = elements;
 
-      return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+      return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
       break;
     }
   }
@@ -865,14 +865,14 @@ VALUE nm_gelss(int argc, VALUE* argv) {
  */
 VALUE nm_posv(int argc, VALUE* argv) {
   nmatrix* matrix_a;
-  Data_Get_Struct(argv[0], nmatrix, matrix_a);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix_a);
 
   int m_a = matrix_a->shape[0]; //no. of rows
   int n_a = matrix_a->shape[1]; //no. of cols
   int lda_a = n_a, info = -1;
 
   nmatrix* matrix_b;
-  Data_Get_Struct(argv[1], nmatrix, matrix_b);
+  TypedData_Get_Struct(argv[1], nmatrix, &nm_data_type, matrix_b);
 
   int m_b = matrix_b->shape[0]; //no. of rows
   int n_b = 1; //no. of cols
@@ -906,8 +906,8 @@ VALUE nm_posv(int argc, VALUE* argv) {
       result_c->elements = elements_a;
       result_x->elements = elements_b;
 
-      VALUE c = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_c);
-      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      VALUE c = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_c);
+      VALUE x = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_x);
       return rb_ary_new3(2, c, x);
       break;
     }
@@ -922,8 +922,8 @@ VALUE nm_posv(int argc, VALUE* argv) {
       result_c->elements = elements_a;
       result_x->elements = elements_b;
 
-      VALUE c = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_c);
-      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      VALUE c = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_c);
+      VALUE x = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_x);
       return rb_ary_new3(2, c, x);
       break;
     }
@@ -938,8 +938,8 @@ VALUE nm_posv(int argc, VALUE* argv) {
       result_c->elements = elements_a;
       result_x->elements = elements_b;
 
-      VALUE c = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_c);
-      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      VALUE c = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_c);
+      VALUE x = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_x);
       return rb_ary_new3(2, c, x);
       break;
     }
@@ -954,8 +954,8 @@ VALUE nm_posv(int argc, VALUE* argv) {
       result_c->elements = elements_a;
       result_x->elements = elements_b;
 
-      VALUE c = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_c);
-      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
+      VALUE c = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_c);
+      VALUE x = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_x);
       return rb_ary_new3(2, c, x);
       break;
     }
@@ -978,14 +978,14 @@ VALUE nm_posv(int argc, VALUE* argv) {
  */
 VALUE nm_gesv(int argc, VALUE* argv) {
   nmatrix* matrix_a;
-  Data_Get_Struct(argv[0], nmatrix, matrix_a);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix_a);
 
   int m_a = matrix_a->shape[0]; //no. of rows
   int n_a = matrix_a->shape[1]; //no. of cols
   int lda_a = n_a, info = -1;
 
   nmatrix* matrix_b;
-  Data_Get_Struct(argv[1], nmatrix, matrix_b);
+  TypedData_Get_Struct(argv[1], nmatrix, &nm_data_type, matrix_b);
 
   int m_b = matrix_b->shape[0]; //no. of rows
   int n_b = matrix_b->shape[1]; //no. of cols
@@ -1020,9 +1020,9 @@ VALUE nm_gesv(int argc, VALUE* argv) {
       result_x->elements = elements_b;
       result_ipiv->elements = ipiv_elements;
 
-      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
-      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
-      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      VALUE lu = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_lu);
+      VALUE x = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_x);
+      VALUE ipiv = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_ipiv);
       return rb_ary_new3(3, lu, x, ipiv);
       break;
     }
@@ -1039,9 +1039,9 @@ VALUE nm_gesv(int argc, VALUE* argv) {
       result_x->elements = elements_b;
       result_ipiv->elements = ipiv_elements;
 
-      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
-      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
-      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      VALUE lu = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_lu);
+      VALUE x = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_x);
+      VALUE ipiv = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_ipiv);
       return rb_ary_new3(3, lu, x, ipiv);
       break;
     }
@@ -1058,9 +1058,9 @@ VALUE nm_gesv(int argc, VALUE* argv) {
       result_x->elements = elements_b;
       result_ipiv->elements = ipiv_elements;
 
-      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
-      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
-      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      VALUE lu = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_lu);
+      VALUE x = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_x);
+      VALUE ipiv = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_ipiv);
       return rb_ary_new3(3, lu, x, ipiv);
       break;
     }
@@ -1077,9 +1077,9 @@ VALUE nm_gesv(int argc, VALUE* argv) {
       result_x->elements = elements_b;
       result_ipiv->elements = ipiv_elements;
 
-      VALUE lu = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu);
-      VALUE x = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_x);
-      VALUE ipiv = Data_Wrap_Struct(NMatrix, NULL, nm_free, result_ipiv);
+      VALUE lu = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_lu);
+      VALUE x = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_x);
+      VALUE ipiv = TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_ipiv);
       return rb_ary_new3(3, lu, x, ipiv);
       break;
     }
@@ -1108,7 +1108,7 @@ VALUE nm_gesv(int argc, VALUE* argv) {
  */
 VALUE nm_lange(int argc, VALUE* argv) {
   nmatrix* matrix;
-  Data_Get_Struct(argv[0], nmatrix, matrix);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix);
 
   int m = matrix->shape[0]; //no. of rows
   int n = matrix->shape[1]; //no. of cols
@@ -1167,7 +1167,7 @@ VALUE nm_lange(int argc, VALUE* argv) {
  */
 VALUE nm_invert(VALUE self){
   nmatrix* matrix;
-  Data_Get_Struct(self, nmatrix, matrix);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, matrix);
 
   nmatrix* result = ALLOC(nmatrix);
   result->dtype = matrix->dtype;
@@ -1189,7 +1189,7 @@ VALUE nm_invert(VALUE self){
 
   LAPACKE_dgetri(LAPACK_ROW_MAJOR, n, elements, lda, ipiv);
   result->elements = elements;
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }
 
 void sgetrf(const float* arr, const size_t cols, const size_t rows, int* ipiv, float* arr2) {
@@ -1235,8 +1235,8 @@ void zgetrf(const double complex* arr, const size_t cols, const size_t rows, int
 VALUE nm_solve(VALUE self, VALUE rhs_val){
   nmatrix* lhs;
   nmatrix* rhs;
-  Data_Get_Struct(self, nmatrix, lhs);
-  Data_Get_Struct(rhs_val, nmatrix, rhs);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, lhs);
+  TypedData_Get_Struct(rhs_val, nmatrix, &nm_data_type, rhs);
 
   double* lhs_elements = ALLOC_N(double, lhs->count);
   memcpy(lhs_elements, lhs->elements, sizeof(double)*lhs->count);
@@ -1264,7 +1264,7 @@ VALUE nm_solve(VALUE self, VALUE rhs_val){
 
   result->elements = rhs_elements;
 
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }
 
 
@@ -1277,7 +1277,7 @@ VALUE nm_solve(VALUE self, VALUE rhs_val){
  */
 VALUE nm_det(VALUE self){
   nmatrix* matrix;
-  Data_Get_Struct(self, nmatrix, matrix);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, matrix);
 
   int n = (int)matrix->shape[1];
   int m = (int)matrix->shape[0];
@@ -1287,7 +1287,6 @@ VALUE nm_det(VALUE self){
   switch (matrix->dtype) {
     case nm_float32:
     {
-      
       float* elements = ALLOC_N(float, matrix->count);
       int* pivot = ALLOC_N(int, min(m,n)+1);
     
@@ -1309,7 +1308,27 @@ VALUE nm_det(VALUE self){
     }
     case nm_float64:
     {
-
+      double* elements = ALLOC_N(double, matrix->count);
+      int* pivot = ALLOC_N(int, min(m,n)+1);
+    
+      dgetrf(matrix->elements, matrix->shape[1], matrix->shape[0], pivot, elements);
+    
+      int num_perm = 0;
+      int j = 0;
+      for(int i = 0; i < min(m,n)+1; ++i){
+        if(pivot[i]-1 != j){num_perm += 1;}
+        j++;
+      }
+    
+      prod = (num_perm % 2 == 1) ? 1 : -1;
+    
+      for(int i =0; i < min(m,n); i++){
+        prod *= elements[matrix->shape[0]*i + i];
+      }
+      break;
+    }
+    default:
+    {
       double* elements = ALLOC_N(double, matrix->count);
       int* pivot = ALLOC_N(int, min(m,n)+1);
     
@@ -1336,8 +1355,8 @@ VALUE nm_det(VALUE self){
 VALUE nm_least_square(VALUE self, VALUE rhs_val){
   nmatrix* lhs;
   nmatrix* rhs;
-  Data_Get_Struct(self, nmatrix, lhs);
-  Data_Get_Struct(rhs_val, nmatrix, rhs);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, lhs);
+  TypedData_Get_Struct(rhs_val, nmatrix, &nm_data_type, rhs);
 
   int m = (int)lhs->shape[0];
   int n = (int)lhs->shape[1];
@@ -1388,7 +1407,7 @@ VALUE nm_least_square(VALUE self, VALUE rhs_val){
 
   //LAPACKE_dgels(LAPACK_ROW_MAJOR,'N',m,n,nrhs,lhs_elements,lda,rhs_elements,ldb);
 
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }
 
 VALUE nm_pinv(VALUE self){
@@ -1419,7 +1438,7 @@ VALUE nm_lu(VALUE self){
 
 VALUE nm_lu_factor(VALUE self){
   nmatrix* matrix;
-  Data_Get_Struct(self, nmatrix, matrix);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, matrix);
 
   nmatrix* result_lu = ALLOC(nmatrix);
   result_lu->dtype = matrix->dtype;
@@ -1451,8 +1470,8 @@ VALUE nm_lu_factor(VALUE self){
   result_piv->elements = ipiv;
 
   VALUE ary = rb_ary_new();
-  rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_lu));
-  rb_ary_push(ary, Data_Wrap_Struct(NMatrix, NULL, nm_free, result_piv));
+  rb_ary_push(ary, TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_lu));
+  rb_ary_push(ary, TypedData_Wrap_Struct(NMatrix, &nm_data_type, result_piv));
 
   return ary;
 }

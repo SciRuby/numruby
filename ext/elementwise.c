@@ -7,7 +7,7 @@
 #define DEF_ELEMENTWISE_RUBY_ACCESSOR(name, oper)  \
 VALUE nm_##name(VALUE self, VALUE another){        \
   nmatrix* left;                                   \
-  Data_Get_Struct(self, nmatrix, left);            \
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, left);            \
                                                    \
   nmatrix* right;                                  \
   nmatrix* result = ALLOC(nmatrix);                \
@@ -15,7 +15,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
   nmatrix* left_copy;                              \
   nmatrix* right_copy;                             \
   if(rb_obj_is_kind_of(another, NMatrix) == Qtrue) {\
-    Data_Get_Struct(another, nmatrix, right);       \
+    TypedData_Get_Struct(another, nmatrix, &nm_data_type, right);       \
     left_copy = matrix_copy(left);                  \
     right_copy = matrix_copy(right);                \
     broadcast_matrices(left_copy, right_copy);      \
@@ -44,7 +44,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_bool:                                                                 \
     {                                                                            \
       bool* result_elements = ALLOC_N(bool, result->count);                  \
-      if(RB_TYPE_P(another, T_TRUE) || RB_TYPE_P(another, T_FALSE)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         bool* left_elements = (bool*)left->elements;                       \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (another ? Qtrue : Qfalse);      \
@@ -64,7 +64,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_int:                                                                 \
     {                                                                            \
       int* result_elements = ALLOC_N(int, result->count);                  \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         int* left_elements = (int*)left->elements;                               \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
@@ -84,7 +84,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_float32:                                                             \
     {                                                                            \
       float* result_elements = ALLOC_N(float, result->count);                    \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         float* left_elements = (float*)left->elements;                           \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
@@ -104,7 +104,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_float64:                                                             \
     {                                                                            \
       double* result_elements = ALLOC_N(double, result->count);                  \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         double* left_elements = (double*)left->elements;                    \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
@@ -124,7 +124,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_complex32:                                                             \
     {                                                                            \
       complex float* result_elements = ALLOC_N(complex float, result->count);                    \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         complex float* left_elements = (complex float*)left->elements;      \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
@@ -144,7 +144,7 @@ VALUE nm_##name(VALUE self, VALUE another){        \
     case nm_complex64:                                                             \
     {                                                                            \
       complex double* result_elements = ALLOC_N(complex double, result->count);                    \
-      if(RB_TYPE_P(another, T_FLOAT) || RB_TYPE_P(another, T_FIXNUM)){           \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
         complex double* left_elements = (complex double*)left->elements;    \
         for(size_t index = 0; index < left->count; index++){                     \
           result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
@@ -161,8 +161,28 @@ VALUE nm_##name(VALUE self, VALUE another){        \
       result->elements = result_elements;                                          \
       break;                                                                       \
     }                                                                              \
+    default:                                                                    \
+    {                                                                            \
+      double* result_elements = ALLOC_N(double, result->count);                  \
+      if(rb_obj_is_kind_of(another, NMatrix) == Qfalse){           \
+        double* left_elements = (double*)left->elements;                    \
+        for(size_t index = 0; index < left->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (NUM2DBL(another));      \
+        }                                                                        \
+      }                                                                          \
+      else{                                                                      \
+        double* left_elements = (double*)left_copy->elements;                    \
+        double* right_elements = (double*)right_copy->elements;                       \
+                                                                                 \
+        for(size_t index = 0; index < left_copy->count; index++){                     \
+          result_elements[index] = (left_elements[index]) oper (right_elements[index]); \
+        }                                                                        \
+      }                                                                          \
+      result->elements = result_elements;                                        \
+      break;                                                                     \
+    }                                                                            \
   }                                                                                 \
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);                         \
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);                         \
 }
 
 DEF_ELEMENTWISE_RUBY_ACCESSOR(add, +)
@@ -180,7 +200,7 @@ DEF_ELEMENTWISE_RUBY_ACCESSOR(divide, /)
 
 VALUE nm_sin(VALUE self){
   nmatrix* input;
-  Data_Get_Struct(self, nmatrix, input);
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);
 
   nmatrix* result = ALLOC(nmatrix);
   result->dtype = input->dtype;
@@ -256,13 +276,13 @@ VALUE nm_sin(VALUE self){
     }
   }
 
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }
 
 #define DEF_UNARY_RUBY_ACCESSOR(oper, name)                        \
 static VALUE nm_##name(VALUE self) {                               \
   nmatrix* input;                                                  \
-  Data_Get_Struct(self, nmatrix, input);                           \
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);                           \
                                                                    \
   nmatrix* result = ALLOC(nmatrix);                                \
   result->dtype = input->dtype;                                    \
@@ -336,7 +356,7 @@ static VALUE nm_##name(VALUE self) {                               \
       break;                                                       \
     }                                                              \
   }                                                                \
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);         \
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);         \
 }
 
 DEF_UNARY_RUBY_ACCESSOR(cos, cos)
@@ -357,7 +377,7 @@ DEF_UNARY_RUBY_ACCESSOR(sqrt, sqrt)
 #define DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(oper, name)            \
 static VALUE nm_##name(VALUE self) {                               \
   nmatrix* input;                                                  \
-  Data_Get_Struct(self, nmatrix, input);                           \
+  TypedData_Get_Struct(self, nmatrix, &nm_data_type, input);                           \
                                                                    \
   nmatrix* result = ALLOC(nmatrix);                                \
   result->dtype = input->dtype;                                    \
@@ -419,7 +439,7 @@ static VALUE nm_##name(VALUE self) {                               \
       /* Not supported message */                                  \
     }                                                              \
   }                                                                \
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);         \
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);         \
 }
 
 DEF_UNARY_RUBY_ACCESSOR_NON_COMPLEX(log2, log2)

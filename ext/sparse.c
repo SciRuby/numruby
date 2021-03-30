@@ -4,7 +4,7 @@ VALUE nm_sparse_alloc(VALUE klass)
 {
   csr_nmatrix* mat = ALLOC(csr_nmatrix);
 
-  return Data_Wrap_Struct(klass, NULL, nm_free, mat);
+  return TypedData_Wrap_Struct(klass, &nm_data_type, mat);
 }
 
 //frees the memeory allocated to the given sparse matrix object
@@ -99,7 +99,7 @@ VALUE coo_sparse_nmatrix_init(int argc, VALUE* argv){
     }
   }
 
-  return Data_Wrap_Struct(SparseNMatrix, NULL, nm_free, mat);
+  return TypedData_Wrap_Struct(SparseNMatrix, &nm_data_type, mat);
 }
 
 //initializes the sparse matrix of type CSR
@@ -189,7 +189,7 @@ VALUE csr_sparse_nmatrix_init(int argc, VALUE* argv){
     }
   }
 
-  return Data_Wrap_Struct(SparseNMatrix, NULL, nm_free, mat);
+  return TypedData_Wrap_Struct(SparseNMatrix, &nm_data_type, mat);
 }
 
 //initializes the sparse matrix of type CSC
@@ -279,7 +279,7 @@ VALUE csc_sparse_nmatrix_init(int argc, VALUE* argv){
     }
   }
 
-  return Data_Wrap_Struct(SparseNMatrix, NULL, nm_free, mat);
+  return TypedData_Wrap_Struct(SparseNMatrix, &nm_data_type, mat);
 }
 
 //initializes the sparse matrix of type Dia
@@ -365,13 +365,13 @@ VALUE dia_sparse_nmatrix_init(int argc, VALUE* argv){
     }
   }
 
-  return Data_Wrap_Struct(SparseNMatrix, NULL, nm_free, mat);
+  return TypedData_Wrap_Struct(SparseNMatrix, &nm_data_type, mat);
 }
 
 //return the dtype of given sparse matrix
 VALUE nm_sparse_get_dtype(VALUE self){
   sparse_nmatrix* spmat;
-  Data_Get_Struct(self, sparse_nmatrix, spmat);
+  TypedData_Get_Struct(self, sparse_nmatrix, &nm_data_type, spmat);
 
   return rb_str_new_cstr(DTYPE_NAMES[spmat->dtype]);
 }
@@ -380,7 +380,7 @@ VALUE nm_sparse_get_dtype(VALUE self){
 VALUE nm_sparse_get_shape(VALUE self){
   sparse_nmatrix* input;
 
-  Data_Get_Struct(self, sparse_nmatrix, input);
+  TypedData_Get_Struct(self, sparse_nmatrix, &nm_data_type, input);
 
   VALUE* array = ALLOC_N(VALUE, input->ndims);
   for (size_t index = 0; index < input->ndims; index++){
@@ -393,7 +393,7 @@ VALUE nm_sparse_get_shape(VALUE self){
 //converts given sparse matrix to a flat list of elements
 VALUE nm_sparse_to_array(VALUE self){
   sparse_nmatrix* input;
-  Data_Get_Struct(self, sparse_nmatrix, input);
+  TypedData_Get_Struct(self, sparse_nmatrix, &nm_data_type, input);
 
   size_t count = input->count;
   VALUE* array = ALLOC_N(VALUE, input->count);
@@ -428,6 +428,11 @@ VALUE nm_sparse_to_array(VALUE self){
     case nm_complex64:
     {
       elements_t = ALLOC_N(double complex, count);
+      break;
+    }
+    default:
+    {
+      elements_t = ALLOC_N(double, count);
       break;
     }
   }
@@ -470,6 +475,16 @@ VALUE nm_sparse_to_array(VALUE self){
                         input->shape[1],
                         input->diag->offset,
                         elements_t, nm_float64);
+      break;
+    }
+    default:
+    {
+      get_dense_from_coo(input->coo->elements,
+                        input->shape[0],
+                        input->shape[1],
+                        input->coo->ia,
+                        input->coo->ja,
+                        elements_t, input->dtype);
       break;
     }
   }
@@ -523,6 +538,14 @@ VALUE nm_sparse_to_array(VALUE self){
       }
       break;
     }
+    default:
+    {
+      double* elements = elements_t;
+      for (size_t index = 0; index < count; index++){
+        array[index] = DBL2NUM(elements[index]);
+      }
+      break;
+    }
   }
 
   return rb_ary_new4(count, array);
@@ -533,7 +556,7 @@ VALUE nm_sparse_to_array(VALUE self){
 //on the type of sparse matrix
 VALUE nm_sparse_to_nmatrix(VALUE self){
   sparse_nmatrix* input;
-  Data_Get_Struct(self, sparse_nmatrix, input);
+  TypedData_Get_Struct(self, sparse_nmatrix, &nm_data_type, input);
 
   nmatrix* result = ALLOC(nmatrix);
   result->dtype = input->dtype;
@@ -575,6 +598,11 @@ VALUE nm_sparse_to_nmatrix(VALUE self){
     case nm_complex64:
     {
       elements_t = ALLOC_N(double complex, result->count);
+      break;
+    }
+    default:
+    {
+      elements_t = ALLOC_N(double, result->count);
       break;
     }
   }
@@ -626,7 +654,7 @@ VALUE nm_sparse_to_nmatrix(VALUE self){
   }
 
 
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }
 
 //extracts elements from coo type sparse matrix
@@ -653,7 +681,7 @@ void get_dense_from_coo(const void* data_t, const size_t rows,
     }
     case nm_int:
     {
-      const const int* data = data_t;
+      const int* data = data_t;
       int* elements = elements_t;
       for(size_t i = 0; i < rows*cols; ++i){ elements[i] = 0; }
 

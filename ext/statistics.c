@@ -9,12 +9,12 @@
  */
 VALUE average_nmatrix(int argc, VALUE* argv){
   nmatrix* matrix;
-  Data_Get_Struct(argv[0], nmatrix, matrix);
+  TypedData_Get_Struct(argv[0], nmatrix, &nm_data_type, matrix);
 
   size_t axis = NUM2LONG(argv[1]);
 
   nmatrix* weights;
-  Data_Get_Struct(argv[2], nmatrix, weights);
+  TypedData_Get_Struct(argv[2], nmatrix, &nm_data_type, weights);
   double* weight_elements = weights->elements;
 
   nmatrix* result = ALLOC(nmatrix);
@@ -54,5 +54,5 @@ VALUE average_nmatrix(int argc, VALUE* argv){
     result->elements = result_elements;
   }
 
-  return Data_Wrap_Struct(NMatrix, NULL, nm_free, result);
+  return TypedData_Wrap_Struct(NMatrix, &nm_data_type, result);
 }

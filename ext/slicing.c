@@ -1,6 +1,6 @@
 /*
  * converts Range objects to corresponding
- * lower limt and upper limit and put them in size_t varibles
+ * lower limit and upper limit and put them in size_t variables
  */
 void parse_ranges(nmatrix* nmat, VALUE* indices, size_t* lower, size_t* upper){
 
@@ -52,7 +52,7 @@ void parse_ranges(nmatrix* nmat, VALUE* indices, size_t* lower, size_t* upper){
  *
  *
  */
-void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
+void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix_buffer* slice){
   /*
     parse the indices to form ranges for C loops
 
@@ -84,203 +84,215 @@ void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice){
     slice->shape[slice_ind++] = dim_length;
   }
 
-
-  //mark elements that are inside the slice
-  //and copy them to elements array of slice
-
   VALUE* state_array = ALLOC_N(VALUE, nmat->ndims);
   for(size_t i = 0; i < nmat->ndims; ++i){
     state_array[i] = SIZET2NUM(lower[i]);
   }
 
-  switch (nmat->dtype){
-    case nm_bool:
-    {
-      bool* nmat_elements = (bool*)nmat->elements;
+  // for float64
+  double* nmat_elements = (double*)nmat->elements;
+  size_t start_index = get_index(nmat, state_array);  // slice first element index in elements array
+  slice->buffer_ele_start_ptr = (nmat_elements + start_index);
 
-      bool* slice_elements = ALLOC_N(bool, slice->count);
+  //mark elements that are inside the slice
+  //and copy them to elements array of slice
 
-      for(size_t i = 0; i < slice->count; ++i){
-        size_t nmat_index = get_index(nmat, state_array);
-        slice_elements[i] = nmat_elements[nmat_index];
+  // below code is moved to get_elements func
+  // as on using nmatrix buffer,
+  // the elements doesn't need to be copied
+  // but the iteration of elements needs to
+  // be done using the starting element of buffer
+  // and original shape strides
 
-        size_t state_index = (nmat->ndims) - 1;
-        while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-          if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[state_index];
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-          }
-          else{
-            curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-            break;
-          }  
+  // switch (nmat->dtype){
+  //   case nm_bool:
+  //   {
+  //     bool* nmat_elements = (bool*)nmat->elements;
 
-          state_index--;        
-        }
-      }
+  //     bool* slice_elements = ALLOC_N(bool, slice->count);
 
-      slice->elements = slice_elements;
-      break;
-    }
-    case nm_int:
-    {
-      int* nmat_elements = (int*)nmat->elements;
+  //     for(size_t i = 0; i < slice->count; ++i){
+  //       size_t nmat_index = get_index(nmat, state_array);
+  //       slice_elements[i] = nmat_elements[nmat_index];
 
-      int* slice_elements = ALLOC_N(int, slice->count);
+  //       size_t state_index = (nmat->ndims) - 1;
+  //       while(true){
+  //         size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-      for(size_t i = 0; i < slice->count; ++i){
-        size_t nmat_index = get_index(nmat, state_array);
-        slice_elements[i] = nmat_elements[nmat_index];
+  //         if(curr_index_value == upper[state_index]){
+  //           curr_index_value = lower[state_index];
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //         }
+  //         else{
+  //           curr_index_value++;
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //           break;
+  //         }  
 
-        size_t state_index = (nmat->ndims) - 1;
-        while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+  //         state_index--;        
+  //       }
+  //     }
 
-          if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[state_index];
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-          }
-          else{
-            curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-            break;
-          }  
+  //     slice->elements = slice_elements;
+  //     break;
+  //   }
+  //   case nm_int:
+  //   {
+  //     int* nmat_elements = (int*)nmat->elements;
 
-          state_index--;        
-        }
-      }
+  //     int* slice_elements = ALLOC_N(int, slice->count);
 
-      slice->elements = slice_elements;
-      break;
-    }
-    case nm_float64:
-    {
-      double* nmat_elements = (double*)nmat->elements;
+  //     for(size_t i = 0; i < slice->count; ++i){
+  //       size_t nmat_index = get_index(nmat, state_array);
+  //       slice_elements[i] = nmat_elements[nmat_index];
 
-      double* slice_elements = ALLOC_N(double, slice->count);
+  //       size_t state_index = (nmat->ndims) - 1;
+  //       while(true){
+  //         size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-      for(size_t i = 0; i < slice->count; ++i){
-        size_t nmat_index = get_index(nmat, state_array);
-        slice_elements[i] = nmat_elements[nmat_index];
+  //         if(curr_index_value == upper[state_index]){
+  //           curr_index_value = lower[state_index];
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //         }
+  //         else{
+  //           curr_index_value++;
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //           break;
+  //         }  
 
-        size_t state_index = (nmat->ndims) - 1;
-        while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+  //         state_index--;        
+  //       }
+  //     }
 
-          if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[state_index];
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-          }
-          else{
-            curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-            break;
-          }  
+  //     slice->elements = slice_elements;
+  //     break;
+  //   }
+  //   case nm_float64:
+  //   {
+  //     double* nmat_elements = (double*)nmat->elements;
 
-          state_index--;        
-        }
-      }
+  //     double* slice_elements = ALLOC_N(double, slice->count);
 
-      slice->elements = slice_elements;
-      break;
-    }
-    case nm_float32:
-    {
-      float* nmat_elements = (float*)nmat->elements;
+  //     for(size_t i = 0; i < slice->count; ++i){
+  //       size_t nmat_index = get_index(nmat, state_array);
+  //       slice_elements[i] = nmat_elements[nmat_index];
 
-      float* slice_elements = ALLOC_N(float, slice->count);
+  //       size_t state_index = (nmat->ndims) - 1;
+  //       while(true){
+  //         size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-      for(size_t i = 0; i < slice->count; ++i){
-        size_t nmat_index = get_index(nmat, state_array);
-        slice_elements[i] = nmat_elements[nmat_index];
+  //         if(curr_index_value == upper[state_index]){
+  //           curr_index_value = lower[state_index];
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //         }
+  //         else{
+  //           curr_index_value++;
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //           break;
+  //         }  
 
-        size_t state_index = (nmat->ndims) - 1;
-        while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+  //         state_index--;        
+  //       }
+  //     }
 
-          if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[state_index];
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-          }
-          else{
-            curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-            break;
-          }  
+  //     slice->elements = slice_elements;
+  //     break;
+  //   }
+  //   case nm_float32:
+  //   {
+  //     float* nmat_elements = (float*)nmat->elements;
 
-          state_index--;        
-        }
-      }
+  //     float* slice_elements = ALLOC_N(float, slice->count);
 
-      slice->elements = slice_elements;
-      break;
-    }
-    case nm_complex32:
-    {
-      float complex* nmat_elements = (float complex*)nmat->elements;
+  //     for(size_t i = 0; i < slice->count; ++i){
+  //       size_t nmat_index = get_index(nmat, state_array);
+  //       slice_elements[i] = nmat_elements[nmat_index];
 
-      float complex* slice_elements = ALLOC_N(float complex, slice->count);
+  //       size_t state_index = (nmat->ndims) - 1;
+  //       while(true){
+  //         size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-      for(size_t i = 0; i < slice->count; ++i){
-        size_t nmat_index = get_index(nmat, state_array);
-        slice_elements[i] = nmat_elements[nmat_index];
+  //         if(curr_index_value == upper[state_index]){
+  //           curr_index_value = lower[state_index];
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //         }
+  //         else{
+  //           curr_index_value++;
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //           break;
+  //         }  
 
-        size_t state_index = (nmat->ndims) - 1;
-        while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+  //         state_index--;        
+  //       }
+  //     }
 
-          if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[state_index];
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-          }
-          else{
-            curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-            break;
-          }  
+  //     slice->elements = slice_elements;
+  //     break;
+  //   }
+  //   case nm_complex32:
+  //   {
+  //     float complex* nmat_elements = (float complex*)nmat->elements;
 
-          state_index--;        
-        }
-      }
+  //     float complex* slice_elements = ALLOC_N(float complex, slice->count);
 
-      slice->elements = slice_elements;
-      break;
-    }
-    case nm_complex64:
-    {
-      double complex* nmat_elements = (double complex*)nmat->elements;
+  //     for(size_t i = 0; i < slice->count; ++i){
+  //       size_t nmat_index = get_index(nmat, state_array);
+  //       slice_elements[i] = nmat_elements[nmat_index];
 
-      double complex* slice_elements = ALLOC_N(double complex, slice->count);
+  //       size_t state_index = (nmat->ndims) - 1;
+  //       while(true){
+  //         size_t curr_index_value = NUM2SIZET(state_array[state_index]);
 
-      for(size_t i = 0; i < slice->count; ++i){
-        size_t nmat_index = get_index(nmat, state_array);
-        slice_elements[i] = nmat_elements[nmat_index];
+  //         if(curr_index_value == upper[state_index]){
+  //           curr_index_value = lower[state_index];
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //         }
+  //         else{
+  //           curr_index_value++;
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //           break;
+  //         }  
 
-        size_t state_index = (nmat->ndims) - 1;
-        while(true){
-          size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+  //         state_index--;        
+  //       }
+  //     }
 
-          if(curr_index_value == upper[state_index]){
-            curr_index_value = lower[state_index];
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-          }
-          else{
-            curr_index_value++;
-            state_array[state_index] = SIZET2NUM(curr_index_value);
-            break;
-          }  
+  //     slice->elements = slice_elements;
+  //     break;
+  //   }
+  //   case nm_complex64:
+  //   {
+  //     double complex* nmat_elements = (double complex*)nmat->elements;
 
-          state_index--;        
-        }
-      }
+  //     double complex* slice_elements = ALLOC_N(double complex, slice->count);
 
-      slice->elements = slice_elements;
-      break;
-    }
-  }
+  //     for(size_t i = 0; i < slice->count; ++i){
+  //       size_t nmat_index = get_index(nmat, state_array);
+  //       slice_elements[i] = nmat_elements[nmat_index];
+
+  //       size_t state_index = (nmat->ndims) - 1;
+  //       while(true){
+  //         size_t curr_index_value = NUM2SIZET(state_array[state_index]);
+
+  //         if(curr_index_value == upper[state_index]){
+  //           curr_index_value = lower[state_index];
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //         }
+  //         else{
+  //           curr_index_value++;
+  //           state_array[state_index] = SIZET2NUM(curr_index_value);
+  //           break;
+  //         }  
+
+  //         state_index--;        
+  //       }
+  //     }
+
+  //     slice->elements = slice_elements;
+  //     break;
+  //   }
+  // }
 
   //fill the nmatrix* slice with the req data
 }
