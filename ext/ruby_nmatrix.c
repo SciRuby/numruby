@@ -133,6 +133,7 @@ static const rb_data_type_t nm_data_type = {
 
 typedef struct NMATRIX_BUFFER_STRUCT
 {
+  nm_dtype dtype;
   size_t count;
   size_t ndims;
   size_t* shape;
@@ -537,7 +538,7 @@ void get_dense_from_dia(const void* data_t, const size_t rows,
                        void* elements_t, nm_dtype);
 
 //forwards for internally used functions
-void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix* slice);
+void get_slice(nmatrix* nmat, size_t* lower, size_t* upper, nmatrix_buffer* slice);
 size_t get_index(nmatrix* nmat, VALUE* indices);
 
 

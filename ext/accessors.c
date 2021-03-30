@@ -66,13 +66,13 @@ VALUE nm_accessor_get(int argc, VALUE* argv, VALUE self){
         {
           if(is_slice(nmat, argv)){
 
-            nmatrix* slice = ALLOC(nmatrix);
+            nmatrix_buffer* slice = ALLOC(nmatrix_buffer);
             slice->dtype = nmat->dtype;
-            slice->stype = nmat->stype;
+            slice->mat = nmat;
 
             get_slice(nmat, lower_indices, upper_indices, slice);
 
-            return TypedData_Wrap_Struct(NMatrix, &nm_data_type, slice);
+            return TypedData_Wrap_Struct(NMatrix, &nm_buffer_data_type, slice);
 
             //return a slice
           }
